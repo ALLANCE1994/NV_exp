@@ -1,0 +1,15 @@
+N_timePts:	100
+Navg:	1
+Nsamples:	1000
+startPulseDuration:	0.000000
+endPulseDuration:	200.000000
+microwavePower:	-5.000000
+microwaveFrequency	2000000000.000000
+t_AOM:	5000.000000
+t_readoutDelay:	2300.000000
+shotByShotNormalization:	False
+randomize:	True
+plotPulseSequence:	False
+saveSpacing_inScanPts:	2
+saveSpacing_inAverages:	3
+dataFileName:	C:\Users\YXCOA\Desktop\手把手教你做NV色心实验\Saved_Data\Rabi_2026-03-30_21h08m50s.txt

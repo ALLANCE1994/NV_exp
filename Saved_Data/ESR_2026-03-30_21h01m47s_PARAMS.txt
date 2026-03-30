@@ -1,0 +1,13 @@
+N_scanPts:	101
+Navg:	1
+Nsamples:	1000
+startFreq:	2700000000.000000
+endFreq:	3000000000.000000
+microwavePower:	-5.000000
+t_duration:	80000.000000
+shotByShotNormalization:	False
+randomize:	True
+plotPulseSequence:	True
+saveSpacing_inScanPts:	2
+saveSpacing_inAverages:	1
+dataFileName:	C:\Users\YXCOA\Desktop\手把手教你做NV色心实验\Saved_Data\ESR_2026-03-30_21h01m47s.txt
