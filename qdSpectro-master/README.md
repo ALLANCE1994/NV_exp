@@ -1,4 +1,4 @@
-# README  qdSpectro v1.0.1
+# README  qdSpectro v1.1.0
 Copyright 2018 Diana Prado Lopes Aude Craik (MIT许可证)
 
 本软件包旨在与题为"Quantum diamond spectrometer for nanoscale NMR and ESR spectroscopy"的论文中描述的协议一起使用（目前正在Nature Protocols 2019年发表审核中）。该论文介绍了基于金刚石中氮空位（NV）色心的光谱仪构建协议，并描述了此软件包和相关硬件的安装和运行过程。本README文件提供了qdSpectro的系统要求和安装/运行指南的摘要，但用户还应阅读论文中的完整协议说明（以下简称协议论文）。
@@ -11,15 +11,16 @@ Copyright 2018 Diana Prado Lopes Aude Craik (MIT许可证)
 3. 使用说明
     * 使用qdSpectro运行实验
     * 使用togglePBchan.py
-4. 当前版本补丁和更新
+4. 各程序的意义
+5. 当前版本补丁和更新
 
 ## 1. 系统要求：
 
 ### 非标准硬件
-* National Instruments数据采集卡（DAQ），采样率至少为250 kSa/s（例如，National Instruments NI USB-6229或NI USB-6211）。qdSpectro已使用NI USB-6229和NI USB-6211进行测试。该代码设计为与National Instruments DAQ配合使用，如果使用其他数据采集系统，需要用户进行修改。
+* National Instruments数据采集卡（DAQ），采样率至少为250 kSa/s（例如，National Instruments NI USB-6229、NI USB-6211或MyDAQ）。qdSpectro已使用NI USB-6229、NI USB-6211和MyDAQ进行测试。该代码设计为与National Instruments DAQ配合使用，如果使用其他数据采集系统，需要用户进行修改。
 * 500MHz PulseBlaster卡（Spincore PulseBlasterESR PRO 500 MHz）。qdSpectro仅使用Spincore PulseBlasterESR PRO 500MHz卡进行了测试，但应与其他SpinCore PulseBlaster卡兼容。可以使用其他信号发生器，但需要用户修改qdSpectro代码。
-* SRS SG384信号发生器。qdSpectro设计为与SRS SG384信号发生器配合使用，仅使用此型号和SG 386型号进行了测试。它应该与其他SRS SG3800或SG3900型号兼容，但尚未使用这些型号进行测试。可以使用其他脉冲发生器，但需要用户修改qdSpectro代码。
-* National Instruments USB/GPIB转换器（qdSpectro使用National Instruments GPIB-USB-HS进行测试）。用于将SRS信号发生器连接到PC。
+* SRS SG384信号发生器或USRP B210设备。qdSpectro设计为与SRS SG384信号发生器配合使用，仅使用此型号和SG 386型号进行了测试。它应该与其他SRS SG3800或SG3900型号兼容，但尚未使用这些型号进行测试。此外，现在也支持使用USRP B210设备作为微波信号源，替代传统的SRS信号发生器。
+* National Instruments USB/GPIB转换器（qdSpectro使用National Instruments GPIB-USB-HS进行测试）。用于将SRS信号发生器连接到PC（如果使用SRS信号发生器）。
 
 ### 软件依赖项
 操作系统：
@@ -33,6 +34,7 @@ Copyright 2018 Diana Prado Lopes Aude Craik (MIT许可证)
 * National Instruments NI-DAQmx驱动程序（使用NI DAQ卡NI USB-6229的17.1.1版本测试）- 用户应下载与所选DAQ卡兼容的NI-DAQmx驱动程序。 https://www.ni.com/dataacquisition/nidaqmx.htm
 * SpinAPI：PulseBlaster卡的SpinCore API和驱动程序套件（使用20171214版本测试）。 http://www.spincore.com/support/spinapi/SpinAPI_Main.shtml
 * 用于USB/GPIB转换器的National Instrument驱动程序（列在上面的硬件要求下），用于PC和SRS信号发生器之间的GPIB通信。qdSpectro已使用National Instruments GPIB-USB-HS转换器进行测试，该转换器需要安装NI-VISA和NI-488.2驱动程序（qdSpectro已使用两者的16.0版本进行测试，尽管较新版本也应该可以工作）。
+* 如果使用USRP B210设备，需要安装UHD驱动程序和相关Python库。
 
 外围仪器控制库：
 * SpinAPI Python3包装器 - SpinCore的Python包装器，用于SpinAPI中的C函数，可用于与PulseBlaster卡通信和控制。qdSpectro已使用Spincore在以下链接上提供的spinapi.py版本进行测试（截至2018年2月8日）。
@@ -40,6 +42,7 @@ http://www.spincore.com/support/SpinAPI_Python_Wrapper/Python_Wrapper_Main.shtml
 如果上述链接不再有效，仍可以从此处检索所需版本的spinapi.py：https://web.archive.org/web/20190208140542/http://www.spincore.com/support/SpinAPI_Python_Wrapper/spinapi.py
 * NI-VISA库（使用16.0版本测试）- 此库应随NI GPIB/USB转换器的驱动程序一起安装，但如果没有，可以从National Instruments网站下载：http://www.ni.com/download/ni-visa-16.0/6184/en/（16.0版本的链接）。必须安装此库才能使qdSpectro通过GPIB与SRS信号发生器通信。 ***重要：此库的位数必须与Python位数匹配。***
 * PyVISA 1.8或更高版本（使用1.8版本测试）- NI-VISA库的Python包装器，允许从Python脚本调用该库 https://pypi.python.org/pypi/PyVISA
+* 如果使用USRP B210设备，需要安装uhd Python库。
 
 用于数据处理和图形显示的Python库：
 * Matplotlib（使用2.1.2版本测试）- 用于绘图的Python库 https://matplotlib.org/index.html
@@ -62,23 +65,28 @@ http://www.spincore.com/support/SpinAPI_Python_Wrapper/Python_Wrapper_Main.shtml
 * 在Windows命令提示符中，通过运行```python -m pip install -U numpy```安装numpy。通过启动Python并运行```import numpy```来检查库是否成功安装。如果没有出现错误，则安装成功。
 * 按照PulseBlaster手册的“安装”部分中的说明进行操作（例如，2017年9月4日版本的PulseBlasterESR-PRO手册的第9页）。这包括下载SpinAPI软件包，将PulseBlaster卡插入计算机中可用的外围组件互连（PCI）插槽，并使用SpinCore提供的测试程序之一测试PulseBlaster。
 * 按照National Instruments DAQ的安装说明进行操作（例如，2009年4月版本的NI USB-621x手册的第1章）。这包括下载NI-DAQmx驱动程序并通过USB将DAQ卡连接到计算机。
-* 使用GPIB/USB转换器将SRS信号发生器的GPIB端口连接到PC上的USB端口。按照SRS手册中的GPIB设置说明在SRS信号发生器上启用GPIB接口并选择其GPIB地址（例如，对于SG 380系列中的型号，请参见SG380系列手册修订版2.04的第46页）。打开qdSpectro的connectionConfig.py，并在此脚本的“SRS connections”部分下，编辑变量GPIBaddr和modelName，使其成为SRS信号发生器的GPIB地址和型号名称（例如，GPIBaddr=27，modelName=‘SG384’）。
-* 按照协议论文中的说明完成硬件设置，包括从DAQ、PulseBlaster和SRS信号发生器到金刚石光谱仪设备的必要连接，并按照论文中的指示编辑connectionConfig.py以相应配置qdSpectro。
+* 如果使用SRS信号发生器：使用GPIB/USB转换器将SRS信号发生器的GPIB端口连接到PC上的USB端口。按照SRS手册中的GPIB设置说明在SRS信号发生器上启用GPIB接口并选择其GPIB地址（例如，对于SG 380系列中的型号，请参见SG380系列手册修订版2.04的第46页）。打开qdSpectro的connectionConfig.py，并在此脚本的“SRS connections”部分下，编辑变量GPIBaddr和modelName，使其成为SRS信号发生器的GPIB地址和型号名称（例如，GPIBaddr=27，modelName=‘SG384’）。
+* 如果使用USRP B210设备：按照USRP B210的安装说明安装UHD驱动程序和相关Python库。
+* 按照协议论文中的说明完成硬件设置，包括从DAQ、PulseBlaster和微波信号源（SRS或B210）到金刚石光谱仪设备的必要连接，并按照论文中的指示编辑connectionConfig.py以相应配置qdSpectro。
 
 ## 3. 使用说明：
 
 ### 使用qdSpectro运行实验：
 下载qdSpectro软件包后，工作目录应包含以下文件。
 用户输入配置文件：
-* connectionConfig.py – PulseBlaster、DAQ和SRS与PC连接的配置文件。在运行任何软件包脚本之前，用户应按照协议中的指示编辑此文件。
+* connectionConfig.py – PulseBlaster、DAQ和微波信号源与PC连接的配置文件。在运行任何软件包脚本之前，用户应按照协议中的指示编辑此文件。
 * __config.py – 实验配置文件。每个实验都有自己的配置文件（例如，ESR实验的配置文件是ESRconfig.py），主要由“用户输入”部分组成，用户可以在其中编辑实验参数并配置与数据处理、绘图和保存方式相关的选项。
 
 主控制和辅助库：
 * mainControl.py – 本协议中描述的所有实验都从mainControl.py脚本运行，该脚本将实验特定的配置文件作为参数。根据配置文件中定义的输入参数，mainControl.py运行实验、生成图表并保存结果。
+* mainControl_MyDAQ.py – 适配MyDAQ设备的主控制程序，功能与mainControl.py类似，但针对MyDAQ设备进行了优化。
 * DAQcontrol.py – 包含配置DAQ的函数
+* DAQcontrol_MyDAQ.py – 包含配置MyDAQ设备的函数
 * SRScontrol.py – 包含控制SRS信号发生器的函数
-* PBcontrol.py – 包含配置和编程PulseBlaster卡的函数
+* B210_SRScontrol.py – 包含控制USRP B210设备的函数，用于替代SRS信号发生器
+* PBcontrol.py – 包含配置和编程PulseBlaster卡的函数，支持时钟信号生成
 * sequenceControl.py – 包含创建运行本协议中实验所需的脉冲序列的函数
+* PB_clock_output.py – 用于在PulseBlaster的指定通道输出时钟信号的辅助脚本
 
 在使用qdSpectro运行任何实验之前，用户应阅读随下载的软件包版本提供的README文件，其中将描述任何升级和补丁，并按照协议论文中的指示编辑connectionConfig.py。
 
@@ -86,7 +94,8 @@ http://www.spincore.com/support/SpinAPI_Python_Wrapper/Python_Wrapper_Main.shtml
 1. 在notepad++中打开相关的___config.py文件。阅读此脚本中定义的实验参数和数据处理选项的描述。
 2. 根据需要编辑此脚本的“用户输入”部分中的实验参数并配置数据处理选项。
 3. 要运行实验，请打开Windows命令提示符，从工作目录运行：
-```python mainControl.py __config```
+   - 使用标准DAQ：```python mainControl.py __config```
+   - 使用MyDAQ：```python mainControl_MyDAQ.py __config```
 4. 要在实验完成前退出，请按Ctrl+C。
 
 关于单位的说明：用户输入参数的单位（在上面的步骤ii中输入）在___config.py文件的用户输入部分的注释中指定。为了更加清晰，我们还在此处注意到，qdSpectro软件包1.0版本（撰写本文时的当前版本）中时间变量的默认单位是纳秒。用户可以以纳秒为单位输入时间变量，或使用以下单位乘数之一：ns = 1，us = 1e3，ms = 1e6。例如，如果将变量endTau设置为10微秒，用户可以在相关___config.py文件的用户输入部分中输入endTau = 10000或endTau = 10*us。本文中的说明始终使用后一种格式。为了完整性，我们还注意到，在qdSpectro 1.0版本中，微波频率以赫兹为单位输入（例如，如果将变量startFreq设置为2.7GHz，用户应输入startFreq=2.7e9），微波功率以dBm为单位输入（例如，如果将变量microwavePower设置为0 dBm，用户应输入microwavePower=0）。运行不同版本qdSpectro的用户应参考该版本的README文件，了解任何版本特定的用户输入说明。
@@ -101,5 +110,36 @@ http://www.spincore.com/support/SpinAPI_Python_Wrapper/Python_Wrapper_Main.shtml
 * S = 连接到DAQ的启动触发输入的PB通道
 要打开给定的PB通道，请键入相应的字母并按Enter键。要关闭通道，请再次键入相同的键。通过在示波器上测量PB输出电压来检查功能。
 
-## 4. 当前版本补丁和更新
+## 4. 各程序的意义
+
+### 核心控制程序
+* **mainControl.py**：主控制程序，负责协调各模块运行实验，采集数据，绘制结果。是整个实验系统的控制中心。
+* **mainControl_MyDAQ.py**：适配MyDAQ设备的主控制程序，功能与mainControl.py类似，但针对MyDAQ设备进行了优化，提供了更适合MyDAQ的配置和错误处理。
+
+### 设备控制模块
+* **DAQcontrol.py**：控制标准National Instruments DAQ设备的数据采集功能，包括配置采样率、通道和读取数据。
+* **DAQcontrol_MyDAQ.py**：专门为MyDAQ设备优化的DAQ控制模块，提供了针对MyDAQ设备特性的配置和数据采集功能。
+* **SRScontrol.py**：控制SRS信号发生器，包括设置频率、功率、调制等参数，用于生成微波信号。
+* **B210_SRScontrol.py**：控制USRP B210设备，作为SRS信号发生器的替代品，用于生成微波信号。
+* **PBcontrol.py**：控制PulseBlaster卡，生成实验所需的脉冲序列和时钟信号。最近的更新添加了10MHz时钟信号生成功能，实现了时钟信号与实验脉冲序列的并行控制。
+
+### 序列生成和辅助工具
+* **sequenceControl.py**：生成各种实验序列（如Rabi、ESR、T1、T2等），是实验时序的核心生成模块。
+* **PB_clock_output.py**：用于在PulseBlaster的指定通道输出时钟信号的辅助脚本，可独立运行生成持续的时钟信号。
+* **togglePBchan.py**：用于手动切换PulseBlaster通道状态的辅助工具，方便设备调试和设置。
+
+### 配置文件
+* **connectionConfig.py**：配置设备连接参数，包括PulseBlaster、DAQ和微波信号源的连接设置。
+* **各种config.py文件**：实验配置文件，如ESRconfig.py、Rabiconfig.py等，定义实验参数和数据处理选项。
+
+## 5. 当前版本补丁和更新
+v1.1.0：
+* 添加了对USRP B210设备的支持，作为SRS信号发生器的替代品
+* 实现了PulseBlaster通道7的10MHz时钟信号生成功能，支持时钟信号与实验脉冲序列的并行控制
+* 适配了MyDAQ设备，添加了mainControl_MyDAQ.py和DAQcontrol_MyDAQ.py
+* 优化了错误处理和设备初始化流程
+* 添加了通道7输出波形的绘制功能
+* 修复了PulseBlaster重复初始化的问题
+* 改进了时钟信号的稳定性和连续性
+
 v1.0.1：T1config.py用户输入部分的文档小修复。
