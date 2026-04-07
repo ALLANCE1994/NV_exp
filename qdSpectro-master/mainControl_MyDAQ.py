@@ -42,6 +42,7 @@ import sys
 import math
 from importlib import import_module
 
+
 # 定义 t_min，PulseBlaster 的时间分辨率，由 1/(时钟频率) 给出：
 t_min = 1e3/conCfg.PBclk # 单位为纳秒
 def validateUserInput(expCfg):
@@ -536,6 +537,16 @@ def runExperiment(expConfigFile):
 			except Exception as alt_err:
 				print(f"警告：备用方法也无法停止脉冲卡输出: {alt_err}")
 	
+def run_experiment(config_name):
+	"""运行实验"""
+	if config_name in ['ESRconfig','Rabiconfig','T1config','T2config','XY8config','correlSpecconfig']:
+		expConfigFile=config_name
+	else:
+		print('请指定一个有效的配置文件，例如：ESRconfig, Rabiconfig, T1config, T2config, XY8config, correlSpecconfig')
+		return False
+	runExperiment(expConfigFile)
+	return True
+
 if __name__ == "__main__":
 	if len(sys.argv)>1 and (sys.argv[1] in ['ESRconfig','Rabiconfig','T1config','T2config','XY8config','correlSpecconfig']):
 		expConfigFile=sys.argv[1]

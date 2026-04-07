@@ -83,9 +83,9 @@ t_min = 1e3/PBclk #in ns
 # 启动 pulse 持续时间 (单位为纳秒):
 startPulseDuration = 0
 # End pulse 持续时间 (单位为纳秒):
-endPulseDuration = 200
+endPulseDuration = 600
 # 数量 pulse length steps:
-N_scanPts =101
+N_scanPts =301
 # 来自SRS的微波功率输出（dBm）- 请勿超过放大器的最大输入功率:
 microwavePower = -5
 # 微波 频率 (Hz):
