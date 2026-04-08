@@ -83,13 +83,13 @@ t_min = 1e3/PBclk #in ns
 
 # 微波 扫描 参数s:----------------------------------------------------
 # 启动 频率 (单位为Hz):
-startFreq = 2.7e9
+startFreq = 2.82e9
 # End 频率 (单位为Hz):
-endFreq = 3.0e9
+endFreq = 3.02e9
 # 数量 频率 steps:
 N_scanPts = 101
 # 微波 功率 输出 from SRS(dBm) - DO NOT EXCEED YOUR AMPLIFIER'S MAXIMUM 输入 功率:
-microwavePower = -5 
+microwavePower = 10 
 # Pulse 序列 参数s:----------------------------------------------------
 # 持续时间 of the 信号-aquisition half of one iteration of ESR 脉冲序列:
 t_duration = 80*us

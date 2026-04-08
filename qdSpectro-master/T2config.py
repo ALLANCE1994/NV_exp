@@ -98,11 +98,11 @@ startTau =100
 # End 延迟 持续时间 (单位为纳秒):
 endTau = 10000
 # 数量 延迟 steps:
-N_scanPts = 200
+N_scanPts = 100
 # 微波 功率 输出 from SRS(dBm) - DO NOT EXCEED YOUR AMPLIFIER'S MAXIMUM 输入 功率:
 microwavePower = -5
 # 微波 频率 (Hz):
-microwaveFrequency = 2e9 
+microwaveFrequency = 2.87e9 
 # Pulse 序列 参数s:----------------------------------------------------
 # AOM pulse 持续时间 (单位为ns)
 t_AOM= 5*us

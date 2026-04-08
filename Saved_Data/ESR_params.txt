@@ -1,0 +1,15 @@
+{
+  "N_scanPts": 101,
+  "Navg": 1,
+  "Nsamples": 1000,
+  "startFreq": 2820000000.0,
+  "endFreq": 3020000000.0,
+  "microwavePower": 10,
+  "t_duration": 80000.0,
+  "shotByShotNormalization": false,
+  "randomize": true,
+  "plotPulseSequence": true,
+  "saveSpacing_inScanPts": 2,
+  "saveSpacing_inAverages": 1,
+  "dataFileName": "./Saved_Data/ESR_data.txt"
+}

@@ -85,11 +85,11 @@ startPulseDuration = 0
 # End pulse 持续时间 (单位为纳秒):
 endPulseDuration = 600
 # 数量 pulse length steps:
-N_scanPts =301
+N_scanPts =101
 # 来自SRS的微波功率输出（dBm）- 请勿超过放大器的最大输入功率:
 microwavePower = -5
 # 微波 频率 (Hz):
-microwaveFrequency = 2e9 
+microwaveFrequency = 2.87e9 
 # Pulse 序列 参数s:----------------------------------------------------
 # AOM pulse 持续时间 (ns)
 t_AOM = 5*us

@@ -88,13 +88,13 @@ t_min = 1e3/PBclk #in ns
 #(t_readout延迟 + 2*t_min*round((1*us)/t_min) + t_pi) to avoid pulse overlap 错误s:
 start_t = 4.5e3
 # End pulse 持续时间 (单位为纳秒):
-end_t = 5e6
+end_t = 5e5
 # 数量 延迟 steps:
-N_scanPts = 200
+N_scanPts = 100
 # 微波 功率 输出 from SRS(dBm) - DO NOT EXCEED YOUR AMPLIFIER'S MAXIMUM 输入 功率:
 microwavePower = -5
 # 微波 频率 (Hz):
-microwaveFrequency = 2e9
+microwaveFrequency = 3e9
 # Pulse 序列 参数s:----------------------------------------------------
 # AOM pulse 持续时间 (单位为ns)
 t_AOM= 5*us

@@ -5,6 +5,14 @@
 
 import os
 import sys
+
+# 添加 UHD 的 bin 目录到系统 PATH 环境变量
+uhd_bin_path = r"D:\APP\UHD\bin"
+os.environ["PATH"] = uhd_bin_path + ";" + os.environ["PATH"]
+
+# 添加 UHD 的 bin 目录到 DLL 搜索路径
+os.add_dll_directory(uhd_bin_path)
+
 import uhd
 import numpy as np
 
@@ -34,8 +42,10 @@ def initSRS(GPIBaddr, modelName):
     print("初始化 B210 设备...")
     
     try:
+        print("正在创建 USRP 对象...")
         # 创建 USRP 对象
         usrp = uhd.usrp.MultiUSRP()
+        print("USRP 对象创建成功")
         
         # 设置默认参数
         rate = 16000000  # 16 MHz 采样率

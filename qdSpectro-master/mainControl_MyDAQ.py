@@ -263,28 +263,29 @@ def runExperiment(expConfigFile):
 			SRS = SRSctl.initSRS(conCfg.GPIBaddr,conCfg.modelName)
 			SRS_available = True
 			print("✅ SRS信号发生器初始化成功")
-			expCfg.microwavePower = 10.0  # 默认微波功率
-			expCfg.microwaveFrequency = 2.7e9  # 默认微波频率
-			expCfg.scannedParam = [2.7e9, 2.7001e9, 2.7002e9]  # 默认扫描频率范围
-			expCfg.N_scanPts = len(expCfg.scannedParam)
-			expCfg.updateSequenceArgs = lambda: [1000000]  # 默认脉冲长度 1ms
-			expCfg.updateExpParamList = lambda: ["ESR", expCfg.N_scanPts, 1, 1, "2.7 GHz", "10 dBm"]
-			expCfg.sequence = "ESRseq"
-			expCfg.savePath = "./Saved_Data"
-			expCfg.plotPulseSequence = False
-			expCfg.randomize = False
-			expCfg.livePlotUpdate = False
-			expCfg.saveSpacing_inScanPts = 1
-			expCfg.saveSpacing_inAverages = 1
-			expCfg.DAQtimeout = 10.0
+			# 使用ESRconfig.py中的参数设置，而不是硬编码的默认值
+			# 这些参数已经在导入配置文件时设置好了
+			# expCfg.scannedParam 已经在导入时由 np.linspace(startFreq, endFreq, N_scanPts) 设置
+			# expCfg.N_scanPts 已经在导入时设置
+			# expCfg.microwavePower 已经在导入时设置
+			# expCfg.updateSequenceArgs 和 expCfg.updateExpParamList 已经在导入时设置
+			# expCfg.sequence 已经在导入时设置
+			# expCfg.savePath 已经在导入时设置
+			# expCfg.plotPulseSequence 已经在导入时设置
+			# expCfg.randomize 已经在导入时设置
+			# expCfg.livePlotUpdate 已经在导入时设置
+			# expCfg.saveSpacing_inScanPts 已经在导入时设置
+			# expCfg.saveSpacing_inAverages 已经在导入时设置
+			# expCfg.DAQtimeout 已经在导入时设置
 			expCfg.contrastMode = "signalOnly"
 			expCfg.shotByShotNormalization = False
 			expCfg.plotXaxisUnits = 1.0
-			expCfg.xAxisLabel = "Frequency (Hz)"
+			if not hasattr(expCfg, 'xAxisLabel'):
+				expCfg.xAxisLabel = "Frequency (Hz)"
 			expCfg.dataFileName = "./Saved_Data/ESR_data.txt"
 			expCfg.paramFileName = "./Saved_Data/ESR_params.txt"
-			expCfg.formattingSaveString = "%s\nN_scanPts: %d\nNsamples: %d\nNavg: %d\nMicrowave frequency: %s\nMicrowave power: %s"
-			expCfg.PBchannels = ["I", "Q", "STARTtrig", "DAQ", "AOM", "MW"]
+			expCfg.formattingSaveString = "json"
+			expCfg.PBchannels = {"I": 0x01, "Q": 0x02, "STARTtrig": 0x04, "DAQ": 0x08, "AOM": 0x10, "MW": 0x20}
 		except Exception as e:
 			print(f"警告：无法初始化SRS信号发生器: {e}")
 			print("将跳过SRS相关操作，继续执行其他功能")
@@ -305,7 +306,7 @@ def runExperiment(expConfigFile):
 			if not hasattr(expCfg, 'updateSequenceArgs'):
 				expCfg.updateSequenceArgs = lambda: [1000000]  # 默认脉冲长度 1ms
 			if not hasattr(expCfg, 'updateExpParamList'):
-				expCfg.updateExpParamList = lambda: ["ESR", expCfg.N_scanPts, 1, 1, "2.7 GHz", "10 dBm"]
+				expCfg.updateExpParamList = lambda: ['N_scanPts:', expCfg.N_scanPts, 'Navg:', 1, 'Nsamples:', 1000, 'startFreq:', 2.7e9, 'endFreq:', 3.0e9, 'microwavePower:', -5, 't_duration:', 80, 'shotByShotNormalization:', False, 'randomize:', False, 'plotPulseSequence:', True, 'saveSpacing_inScanPts:', 1, 'saveSpacing_inAverages:', 1, 'dataFileName:', 'data.txt']
 			if not hasattr(expCfg, 'sequence'):
 				expCfg.sequence = "ESRseq"
 			if not hasattr(expCfg, 'savePath'):
@@ -335,9 +336,9 @@ def runExperiment(expConfigFile):
 			if not hasattr(expCfg, 'paramFileName'):
 				expCfg.paramFileName = "./Saved_Data/ESR_params.txt"
 			if not hasattr(expCfg, 'formattingSaveString'):
-				expCfg.formattingSaveString = "%s\nN_scanPts: %d\nNsamples: %d\nNavg: %d\nMicrowave frequency: %s\nMicrowave power: %s"
+				expCfg.formattingSaveString = "json"
 			if not hasattr(expCfg, 'PBchannels'):
-				expCfg.PBchannels = ["I", "Q", "STARTtrig", "DAQ", "AOM", "MW"]
+				expCfg.PBchannels = {"I": 0x01, "Q": 0x02, "STARTtrig": 0x04, "DAQ": 0x08, "AOM": 0x10, "MW": 0x20}
 
 		# 继续执行其他操作
 		sequenceArgs = expCfg.updateSequenceArgs()
@@ -358,7 +359,10 @@ def runExperiment(expConfigFile):
 
 		# 启用 SRS 输出（如果可用）
 		if SRS_available:
-			SRSctl.setSRS_RFAmplitude(SRS,expCfg.microwavePower)
+			# B210使用增益单位（dB），而不是功率单位（dBm）
+			# 设置合适的增益值（0-70dB）
+			gain_value = 60  # 使用60dB增益以获得足够的输出功率
+			SRSctl.setSRS_RFAmplitude(SRS, gain_value)
 			SRSctl.setupSRSmodulation(SRS,expCfg.sequence)
 			SRSctl.enableSRS_RFOutput(SRS)
 					
@@ -435,14 +439,24 @@ def runExperiment(expConfigFile):
 						data[:,0] = expCfg.scannedParam[0:i_scanPoint+1]
 						data[:,1] = meanSignalCurrentRun[0:i_scanPoint+1]
 						data[:,2] = meanBackgroundCurrentRun[0:i_scanPoint+1]
-						dataFile = open(expCfg.dataFileName, 'w')
-						for line in data:
-							dataFile.write("%.0f\t%.8f\t%.8f\n" % tuple(line))
-						paramFile = open(expCfg.paramFileName, 'w')
-						expParamList[1] = i_scanPoint+1
-						paramFile.write(expCfg.formattingSaveString % tuple(expParamList))
-						dataFile.close()
-						paramFile.close()
+					dataFile = open(expCfg.dataFileName, 'w')
+					for line in data:
+						dataFile.write("%.0f\t%.8f\t%.8f\n" % tuple(line))
+					paramFile = open(expCfg.paramFileName, 'w')
+					expParamList[1] = i_scanPoint+1
+					# 使用JSON格式保存参数
+					import json
+					# 将expParamList转换为字典
+					param_dict = {}
+					for i in range(0, len(expParamList), 2):
+						if i+1 < len(expParamList):
+							key = expParamList[i].rstrip(':')
+							value = expParamList[i+1]
+							param_dict[key] = value
+					# 写入JSON文件
+					json.dump(param_dict, paramFile, indent=2)
+					dataFile.close()
+					paramFile.close()
 					
 			# 按延迟递增顺序对当前运行的计数进行排序
 			dataCurrentRun = np.transpose(np.array([expCfg.scannedParam,meanSignalCurrentRun,meanBackgroundCurrentRun,contrastCurrentRun]))
@@ -479,8 +493,17 @@ def runExperiment(expConfigFile):
 					dataFile.write("%.0f\t%.8f\t%.8f\n" % tuple(item))
 				paramFile = open(expCfg.paramFileName, 'w')
 				expParamList[3] = i_run+1
-				paramFile.write(expCfg.formattingSaveString % tuple(expParamList))
-				dataFile.close()
+				# 使用JSON格式保存参数
+				import json
+				# 将expParamList转换为字典
+				param_dict = {}
+				for i in range(0, len(expParamList), 2):
+					if i+1 < len(expParamList):
+						key = expParamList[i].rstrip(':')
+						value = expParamList[i+1]
+						param_dict[key] = value
+				# 写入JSON文件
+				json.dump(param_dict, paramFile, indent=2)
 				paramFile.close()
 		
 		# 关闭 SRS 输出（如果可用）
