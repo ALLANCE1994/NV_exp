@@ -581,9 +581,47 @@ def run_experiment(config_name):
 	return True
 
 if __name__ == "__main__":
+	# 检查是否有命令行参数
 	if len(sys.argv)>1 and (sys.argv[1] in ['ESRconfig','Rabiconfig','T1config','T2config','XY8config','correlSpecconfig','PulsedODMRconfig']):
 		expConfigFile=sys.argv[1]
+		runExperiment(expConfigFile)
 	else:
-		print('用法：python mainControl.py <ESRconfig|Rabiconfig|T1config|T2config|XY8config|correlSpecconfig|PulsedODMRconfig>')
-		sys.exit()
-	runExperiment(expConfigFile)
+		# 显示菜单
+		print('====================================')
+		print('NV色心实验控制程序')
+		print('====================================')
+		print('请选择要运行的实验：')
+		print('1. ESR实验 (ESRconfig)')
+		print('2. Rabi振荡实验 (Rabiconfig)')
+		print('3. T1弛豫实验 (T1config)')
+		print('4. T2弛豫实验 (T2config)')
+		print('5. XY8序列实验 (XY8config)')
+		print('6. 相关光谱实验 (correlSpecconfig)')
+		print('7. 脉冲ODMR实验 (PulsedODMRconfig)')
+		print('====================================')
+		
+		# 获取用户输入
+		while True:
+			try:
+				choice = int(input('请输入选项编号 (1-7): '))
+				if 1 <= choice <= 7:
+					break
+				else:
+					print('请输入有效的选项编号 (1-7)')
+			except ValueError:
+				print('请输入有效的数字')
+		
+		# 根据选择设置实验配置文件
+		experiments = {
+			1: 'ESRconfig',
+			2: 'Rabiconfig',
+			3: 'T1config',
+			4: 'T2config',
+			5: 'XY8config',
+			6: 'correlSpecconfig',
+			7: 'PulsedODMRconfig'
+		}
+		
+		expConfigFile = experiments[choice]
+		print(f'您选择了：{experiments[choice]}')
+		runExperiment(expConfigFile)
