@@ -87,7 +87,7 @@ startFreq = 2.82e9
 # End 频率 (单位为Hz):
 endFreq = 3.02e9
 # 数量 频率 steps:
-N_scanPts = 101
+N_scanPts = 301
 # 微波 功率 输出 from SRS(dBm) - DO NOT EXCEED YOUR AMPLIFIER'S MAXIMUM 输入 功率:
 microwavePower = 10 
 # Pulse 序列 参数s:----------------------------------------------------

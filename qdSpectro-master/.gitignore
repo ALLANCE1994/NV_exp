@@ -1,0 +1,27 @@
+# 编译生成的文件
+__pycache__/
+*.pyc
+
+# 日志文件
+debug.log
+
+# 依赖库目录
+uhd_env/
+
+# 数据文件
+Saved_Data/
+
+# 临时文件
+*.tmp
+*.temp
+
+# 操作系统文件
+Thumbs.db
+.DS_Store
+
+# 编辑器文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
