@@ -113,6 +113,8 @@ def makeSequence(sequence, args):
 		return makecorrelationSpectSeq(*args)
 	elif sequence == 'optimReadoutSeq':
 		return makeReadoutDelaySweep(*args)
+	elif sequence == 'PulsedODMRseq':
+		return makePulsedODMRseq(*args)
 	else:
 		print('错误： 请求的序列未被识别。')
 		sys.exit
@@ -351,6 +353,90 @@ def makecorrelationSpectSeq(t_delay_betweenXY8seqs,t_delay, t_AOM,t_readoutDelay
 	Qchannel   		 = PBchannel(Q,QstartTimes,Qdurations)
 	STARTtrigchannel = PBchannel(STARTtrig,[0],[t_startTrig])
 	channels=[AOMchannel,DAQchannel, uWchannel, Ichannel, Qchannel, STARTtrigchannel]
+	return channels
+
+def makePulsedODMRseq(scanned_param, t_pi, t_p, t_wait, t_r, t_readoutDelay, t_AOM):
+	"""创建脉冲ODMR序列
+
+	参数:
+		scanned_param: 扫描参数（这里是频率）的最后一个值
+		t_pi: π脉冲持续时间
+		t_p: 自旋极化脉冲宽度
+		t_wait: 等待稳定时间
+		t_r: 读取脉冲宽度
+		t_readoutDelay: 读出延迟时间
+		t_AOM: AOM脉冲持续时间
+
+	返回:
+		通道列表，包括 AOM、DAQ、微波和起始触发通道
+
+	核心流程：
+	1. 子序列A：有微波脉冲（MW_on）
+	   - 第一步：自旋极化（激光脉冲，脉宽为t_p）
+	   - 第二步：等待稳定（等待时间t_wait）
+	   - 第三步：自旋操控（微波π脉冲，脉宽为t_pi）
+	   - 第四步：自旋态读取（激光脉冲，脉宽为t_r，同时采集荧光信号）
+	2. 子序列B：无微波脉冲（MW_off）
+	   - 与子序列A相同的光学部分，但没有微波脉冲
+	   - 同样采集荧光信号作为参考
+	"""
+	# 确保所有时间值都是t_min的整数倍
+	t_pi = t_min * round(t_pi / t_min)
+	t_p = t_min * round(t_p / t_min)
+	t_wait = t_min * round(t_wait / t_min)
+	t_r = t_min * round(t_r / t_min)
+	t_readoutDelay = t_min * round(t_readoutDelay / t_min)
+	t_AOM = t_min * round(t_AOM / t_min)
+
+	# 增加起始延迟，确保板卡有足够的初始化时间
+	t_startTrig = t_min*round(300*ns/t_min)
+	t_readout = t_r  # 读取脉冲宽度作为DAQ采集时间
+	uWtoAOM_delay = t_min*round(1*us/t_min)
+	start_delay = t_min*round(10*us/t_min)  # 增加到10μs，确保板卡有足够的初始化时间
+
+	# 子序列A：有微波脉冲（MW_on）
+	# 1. 自旋极化（激光脉冲）
+	AOM_polarization1 = start_delay
+	# 2. 等待稳定
+	wait_start1 = t_min * round((AOM_polarization1 + t_p) / t_min)
+	# 3. 自旋操控（微波π脉冲）
+	uW_start1 = t_min * round((wait_start1 + t_wait) / t_min)
+	# 4. 自旋态读取（激光脉冲，同时采集荧光信号）
+	AOM_readout1 = t_min * round((uW_start1 + t_pi + uWtoAOM_delay) / t_min)
+	DAQ_start1 = t_min * round((AOM_readout1 + t_readoutDelay) / t_min)
+
+	# 计算子序列A持续时间
+	subsequenceA_duration = t_min * round((AOM_readout1 + t_r) / t_min)
+
+	# 子序列B：无微波脉冲（MW_off）
+	# 1. 自旋极化（激光脉冲）
+	AOM_polarization2 = subsequenceA_duration
+	# 2. 等待稳定
+	wait_start2 = t_min * round((AOM_polarization2 + t_p) / t_min)
+	# 3. 无微波脉冲（仅等待）
+	no_microwave_start = t_min * round((wait_start2 + t_wait) / t_min)
+	# 4. 自旋态读取（激光脉冲，同时采集荧光信号）
+	AOM_readout2 = t_min * round((no_microwave_start + t_pi + uWtoAOM_delay) / t_min)  # 保持与子序列A相同的时间结构
+	DAQ_start2 = t_min * round((AOM_readout2 + t_readoutDelay) / t_min)
+
+	# 创建通道
+	# AOM通道（极化和读态）
+	AOMchannel = PBchannel(AOM, 
+		[AOM_polarization1, AOM_readout1, AOM_polarization2, AOM_readout2], 
+		[t_p, t_r, t_p, t_r])
+
+	# 微波通道（仅在子序列A中）
+	uWchannel = PBchannel(uW, [uW_start1], [t_pi])
+
+	# DAQ通道（在读态时采集）
+	DAQchannel = PBchannel(DAQ, 
+		[DAQ_start1, DAQ_start2], 
+		[t_readout, t_readout])
+
+	# 起始触发通道
+	STARTtrigchannel = PBchannel(STARTtrig, [0], [t_startTrig])
+
+	channels = [AOMchannel, uWchannel, DAQchannel, STARTtrigchannel]
 	return channels
 		
 def makeCPMGpulses(start_delay,numberOfPiPulses,t_delay,t_pi, t_piby2,IQpadding):

@@ -72,7 +72,7 @@ def validateUserInput(expCfg):
 			print('t_duration 现在设置为', expCfg.t_duration,'纳秒')
 	
 	# 检查 t_readoutDelay 和 t_AOM 是否是 t_min 的倍数：
-	if expCfg.sequence in ['RabiSeq','T2seq','XY8seq', 'correlSpecSeq', 'T1seq']:
+	if expCfg.sequence in ['RabiSeq','T2seq','XY8seq', 'correlSpecSeq', 'T1seq', 'PulsedODMRseq']:
 		if expCfg.t_readoutDelay%t_min:
 			print('错误：t_readoutDelay 设置为', expCfg.t_readoutDelay,'纳秒，它不是',t_min,'纳秒的倍数。请将 t_readoutDelay 设置为',t_min,'纳秒的整数倍。')
 			sys.exit()
@@ -85,6 +85,12 @@ def validateUserInput(expCfg):
 			sys.exit()
 		if expCfg.t_readoutDelay<(5*t_min):
 			print('错误：t_readoutDelay 必须大于',(5*t_min),'纳秒！')
+			sys.exit()
+	
+	# 检查 PulsedODMRseq 中的 t_pi 是否是 t_min 的倍数且大于 t_min：
+	if expCfg.sequence == 'PulsedODMRseq':
+		if expCfg.t_pi<t_min or expCfg.t_pi%t_min:
+			print('错误：请求的 pi 脉冲长度',expCfg.t_pi,'纳秒要么小于',t_min,'纳秒，要么不是',t_min,'纳秒的整数倍。')
 			sys.exit()
 	# 检查相关光谱序列中的 tau0 是否是 2*t_min 的整数倍：
 	if expCfg.sequence == 'correlSpecSeq':
@@ -247,7 +253,7 @@ def calculateContrast(contrastMode,signal,background):
 	return contrast
 	
 def runExperiment(expConfigFile):
-# 此函数运行实验，使用用户在实验配置文件（如 ESRconfig、Rabiconfig 等）中配置的输入参数，并绘制和保存数据。
+	# 此函数运行实验，使用用户在实验配置文件（如 ESRconfig、Rabiconfig 等）中配置的输入参数，并绘制和保存数据。
 	try:
 		'''运行实验。'''
 		expCfg = import_module(expConfigFile)
@@ -257,6 +263,10 @@ def runExperiment(expConfigFile):
 		if not (isdir(expCfg.savePath)):
 			makedirs(expCfg.savePath)
 			print('警告：保存目录不存在，正在工作目录中创建名为 Saved_Data 的文件夹。数据将保存到此目录。')
+		
+		# 初始化SRS相关变量
+		SRS_available = False
+		SRS = None
 		
 		# 初始化 SRS 并对 PulseBlaster 进行编程
 		try:
@@ -402,7 +412,7 @@ def runExperiment(expConfigFile):
 					shuffle(expCfg.scannedParam)
 			for i_scanPoint in range (0, expCfg.N_scanPts):
 				# 设置下一次扫描迭代（例如，对于 ESR 实验，改变微波频率；对于 T2 实验，用新的延迟重新编程 pulseblaster）
-				if expCfg.sequence == 'ESRseq':
+				if expCfg.sequence == 'ESRseq' or expCfg.sequence == 'PulsedODMRseq':
 					if SRS_available:
 						SRSctl.setSRS_Freq(SRS, expCfg.scannedParam[i_scanPoint])
 				else:
@@ -562,18 +572,18 @@ def runExperiment(expConfigFile):
 	
 def run_experiment(config_name):
 	"""运行实验"""
-	if config_name in ['ESRconfig','Rabiconfig','T1config','T2config','XY8config','correlSpecconfig']:
+	if config_name in ['ESRconfig','Rabiconfig','T1config','T2config','XY8config','correlSpecconfig','PulsedODMRconfig']:
 		expConfigFile=config_name
 	else:
-		print('请指定一个有效的配置文件，例如：ESRconfig, Rabiconfig, T1config, T2config, XY8config, correlSpecconfig')
+		print('请指定一个有效的配置文件，例如：ESRconfig, Rabiconfig, T1config, T2config, XY8config, correlSpecconfig, PulsedODMRconfig')
 		return False
 	runExperiment(expConfigFile)
 	return True
 
 if __name__ == "__main__":
-	if len(sys.argv)>1 and (sys.argv[1] in ['ESRconfig','Rabiconfig','T1config','T2config','XY8config','correlSpecconfig']):
+	if len(sys.argv)>1 and (sys.argv[1] in ['ESRconfig','Rabiconfig','T1config','T2config','XY8config','correlSpecconfig','PulsedODMRconfig']):
 		expConfigFile=sys.argv[1]
 	else:
-		print('用法：python mainControl.py <ESRconfig|Rabiconfig|T1config|T2config|XY8config|correlSpecconfig>')
+		print('用法：python mainControl.py <ESRconfig|Rabiconfig|T1config|T2config|XY8config|correlSpecconfig|PulsedODMRconfig>')
 		sys.exit()
 	runExperiment(expConfigFile)

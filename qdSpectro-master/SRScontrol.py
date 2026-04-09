@@ -146,7 +146,7 @@ def setSRS_Freq(SRS, freq, units='Hz'):
 def setupSRSmodulation(SRS, sequence):
     # setupSRSmodulation: 为不同序列设置调制模式
     # 注意：B210 不支持 IQ 调制，这里仅打印信息
-    if sequence in ['ESRseq', 'RabiSeq', 'T1seq']:
+    if sequence in ['ESRseq', 'RabiSeq', 'T1seq', 'PulsedODMRseq']:
         disableModulation(SRS)
     elif sequence in ['T2seq','XY8seq','correlSpecSeq']:
         enableIQmodulation(SRS)
