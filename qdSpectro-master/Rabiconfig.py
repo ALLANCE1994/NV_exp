@@ -57,16 +57,16 @@
 *Nsamples：每个扫描点采集的荧光测量样本数。
 *Navg：平均运行轮次（即脉冲长度扫描的重复次数）。
 *DAQtimeout：数据采集卡等待指定数量样本就绪（即完成采集）的最长时间，单位为秒。
-*contrastMode：根据所需对比度模式，设为'ratio_SignalOverReference'、'ratio_DifferenceOverSum'或'signalOnly'之一（详见上文“对比度设置”说明）。
-*livePlotUpdate：设为True可在数据采集时实时更新绘图（详见上文“绘图选项”）。
-*plotPulseSequence：设为True可在实验开始时绘制脉冲序列（详见上文“绘图选项”）。
+*contrastMode：根据所需对比度模式，设为'ratio_SignalOverReference'、'ratio_DifferenceOverSum'或'signalOnly'之一（详见上文"对比度设置"说明）。
+*livePlotUpdate：设为True可在数据采集时实时更新绘图（详见上文"绘图选项"）。
+*plotPulseSequence：设为True可在实验开始时绘制脉冲序列（详见上文"绘图选项"）。
 *plotXaxisUnits：设置数据图横轴单位，可选纳秒（ns）、微秒（us）或毫秒（ms）。
 *xAxisLabel：设置数据图横轴标签。
 *saveSpacing_inScanPts：首次扫描期间，以扫描点数为间隔的数据保存周期。
 *saveSpacing_inAverages：首次完整扫描后，以平均运行轮次为间隔的数据保存周期。
 *savePath：数据保存文件夹路径。默认情况下，数据保存在本脚本所在目录下名为Saved_Data的文件夹中。
 *saveFileName：数据保存文件名。该名称后会自动附加脚本运行的日期和时间。
-*shotByShotNormalization：设为True可启用逐次对比度归一化（详见上文“平均选项”）。
+*shotByShotNormalization：设为True可启用逐次对比度归一化（详见上文"平均选项"）。
 *randomize：设为True可对首次扫描之后的所有扫描打乱扫描点顺序。
 """
 #导入模块
@@ -83,31 +83,40 @@ t_min = 1e3/PBclk #in ns
 # 启动 pulse 持续时间 (单位为纳秒):
 startPulseDuration = 0
 # End pulse 持续时间 (单位为纳秒):
-endPulseDuration = 600
+endPulseDuration = 1000
 # 数量 pulse length steps:
-N_scanPts =101
+N_scanPts = 101
 # 来自SRS的微波功率输出（dBm）- 请勿超过放大器的最大输入功率:
-microwavePower = -5
+microwavePower = 5
+# B210 设备的增益设置（dB）- 范围通常为 0-70 dB，过高的增益可能导致信号失真
+# 注意：B210 使用增益（dB）而不是功率（dBm）
+# 建议增益值：50-65 dB
+B210_gain = 65
 # 微波 频率 (Hz):
-microwaveFrequency = 2.87e9 
+# [优化] 设为ESR测得的共振频率 2.8670 GHz
+microwaveFrequency = 2.8660e9 
 # Pulse 序列 参数s:----------------------------------------------------
 # AOM pulse 持续时间 (ns)
-t_AOM = 5*us
+t_AOM = 10*us
 # 读取out 延迟 (ns)
-t_readoutDelay = 2.3*us
+t_readoutDelay = 400*ns
+# 等待稳定时间 (ns) - ISC弛豫时间
+# [优化] 通常3-5µs，确保电子完全弛豫到基态
+t_wait = 5*us
 # 各脉冲长度点需采集的荧光测量样本数量：
-Nsamples = 1000
+# [优化] 增加样本数提高信噪比
+Nsamples = 100
 # 平均运行轮次：
 Navg = 1
 #DAQ 超时, 单位为秒:
 DAQtimeout = 10
 # 绘图 options--------------------------------------------------------------
 # 对比度 mode
-contrastMode ='ratio_SignalOverReference'
+contrastMode ='signalOnly'
 # Live 绘图 update option
 livePlotUpdate = True
 # 绘制 脉冲序列 option  - set to true to 绘图 the 脉冲序列
-plotPulseSequence = False
+plotPulseSequence = True
 # 绘制X轴单位乘数（纳秒、微秒或毫秒）
 plotXaxisUnits = ns
 # 绘制X轴标签
@@ -125,7 +134,7 @@ saveFileName = "Rabi_"
 # 逐帧对比度归一化选项：
 shotByShotNormalization = False
 # 随机打乱扫描点顺序选项：
-randomize = True
+randomize = False
 #------------------------- END OF USER 输入 ----------------------------------#
 
 scannedParam = np.linspace(startPulseDuration,endPulseDuration, N_scanPts, endpoint=True) 
@@ -138,7 +147,7 @@ scanEndName = 'endPulseDuration'
 #PB 通道s
 PBchannels = {'AOM':AOM,'uW':uW,'DAQ':DAQ,'STARTtrig':STARTtrig}
 #序列参数：
-sequenceArgs = [t_AOM,t_readoutDelay]
+sequenceArgs = [t_AOM,t_readoutDelay,t_wait]
 #Make 保存文件路径：
 dateTimeStr = strftime("%Y-%m-%d_%Hh%Mm%Ss", localtime())
 dataFileName = savePath + saveFileName+ dateTimeStr +".txt"
@@ -149,9 +158,9 @@ formattingSaveString = "%s\t%d\n%s\t%d\n%s\t%d\n%s\t%f\n%s\t%f\n%s\t%f\n%s\t%f\n
 expParamList = ['N_timePts:',N_scanPts,'Navg:',Navg,'Nsamples:',Nsamples,'startPulseDuration:',scannedParam[0],'endPulseDuration:',scannedParam[-1],'microwavePower:',microwavePower,'microwaveFrequency',microwaveFrequency,'t_AOM:',t_AOM, 't_readoutDelay:',t_readoutDelay,'shotByShotNormalization:',shotByShotNormalization,'randomize:',randomize,'plotPulseSequence:',plotPulseSequence,'saveSpacing_inScanPts:',saveSpacing_inScanPts,'saveSpacing_inAverages:',saveSpacing_inAverages,'dataFileName:',dataFileName]
 
 def updateSequenceArgs():
-	sequenceArgs = [t_AOM,t_readoutDelay]
+	sequenceArgs = [t_AOM,t_readoutDelay,t_wait]
 	return sequenceArgs
 	
 def updateExpParamList():
-	expParamList = ['N_timePts:',N_scanPts,'Navg:',Navg,'Nsamples:',Nsamples,'startPulseDuration:',scannedParam[0],'endPulseDuration:',scannedParam[-1],'microwavePower:',microwavePower,'microwaveFrequency',microwaveFrequency,'t_AOM:',t_AOM, 't_readoutDelay:',t_readoutDelay,'shotByShotNormalization:',shotByShotNormalization,'randomize:',randomize,'plotPulseSequence:',plotPulseSequence,'saveSpacing_inScanPts:',saveSpacing_inScanPts,'saveSpacing_inAverages:',saveSpacing_inAverages,'dataFileName:',dataFileName]
-	return expParamList
+	expParamList = ['N_timePts:',N_scanPts,'Navg:',Navg,'Nsamples:',Nsamples,'startPulseDuration:',scannedParam[0],'endPulseDuration:',scannedParam[-1],'microwavePower:',microwavePower,'B210_gain:',B210_gain,'microwaveFrequency',microwaveFrequency,'t_AOM:',t_AOM, 't_readoutDelay:',t_readoutDelay,'shotByShotNormalization:',shotByShotNormalization,'randomize:',randomize,'plotPulseSequence:',plotPulseSequence,'saveSpacing_inScanPts:',saveSpacing_inScanPts,'saveSpacing_inAverages:',saveSpacing_inAverages,'dataFileName:',dataFileName]
+	return expParamList, dataFileName, paramFileName

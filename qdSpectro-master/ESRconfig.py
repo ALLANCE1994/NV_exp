@@ -1,25 +1,17 @@
 # ESR配置.py
 # 版权所有 2018 Diana Prado Lopes Aude Craik
 
-# 特此免费授予许可, free of charge, to any person 
-# obtaining a copy of this software and associated documentation
-# files (the "Software"), to deal in the Software without
-# restriction, including without limitation the rights to use, copy,
-# modify, merge, publish, distribute, sublicense, and/or sell copies
-# of the Software, and to permit persons to whom the Software is 
-# furnished to do so, subject to the following conditions:
+# 特此免费授予许可，无论是否收费，任何获得本软件及相关文档
+# 文件（以下简称"软件"）副本的人，有权在不受限制的情况下处理该软件，
+# 包括但不限于使用、复制、修改、合并、发布、分发、再许可和/或出售软件副本，
+# 以及允许向其提供软件的人这样做，但须遵守以下条件：
 
-# 上述版权声明 and this permission notice shall be
-# included in all copies or substantial portions of the Software.
+# 上述版权声明和本许可通知应包含在软件的所有副本或实质性部分中。
 
-# 本软件按"原样"提供 "AS IS", WITHOUT WARRANTY OF ANY KIND,
-# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
-# BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
-# ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
+# 本软件按"原样"提供，不提供任何形式的担保，无论是明示的还是暗示的，
+# 包括但不限于适销性、特定用途适用性和非侵权性的担保。在任何情况下，
+# 作者或版权持有人均不对任何索赔、损害或其他责任负责，无论是在合同行为、
+# 侵权行为或其他情况下，由软件或软件的使用或其他交易引起、产生或与之相关的。
 
 """
 电子自旋共振（ESR）实验配置
@@ -69,80 +61,92 @@
 *shotByShotNormalization：设为True可开启逐次采样对比度归一化（详见上文“平均计算选项”）。
 *randomize：设为True可对首次扫描之后所有扫描的频率点顺序进行随机打乱。
 """
-#导入模块
+# 导入模块
 from spinapi import ns,us,ms
 from SRScontrol import Hz, kHz, MHz, GHz
 import os
 import numpy as np
 from time import localtime, strftime
 from connectionConfig import *
-# 定义 t_min, 时间分辨率 of the PulseBlaster, given by 1/(时钟频率):
-t_min = 1e3/PBclk #in ns
+# 定义 t_min，PulseBlaster 的时间分辨率，由 1/(时钟频率) 计算得出：
+t_min = 1e3/PBclk #单位为 ns
 
-#-------------------------  USER 输入  ---------------------------------------#
+#------------------------- 用户输入 ---------------------------------------#
 
-# 微波 扫描 参数s:----------------------------------------------------
-# 启动 频率 (单位为Hz):
-startFreq = 2.82e9
-# End 频率 (单位为Hz):
-endFreq = 3.02e9
-# 数量 频率 steps:
-N_scanPts = 301
-# 微波 功率 输出 from SRS(dBm) - DO NOT EXCEED YOUR AMPLIFIER'S MAXIMUM 输入 功率:
-microwavePower = 10 
-# Pulse 序列 参数s:----------------------------------------------------
-# 持续时间 of the 信号-aquisition half of one iteration of ESR 脉冲序列:
-t_duration = 80*us
-# 数量 fluorescence measurement 样本 to take at each 频率 点:
-Nsamples = 1000
-# 数量 averaging 运行s to do:
+# 微波扫描参数:----------------------------------------------------
+# 起始频率 (单位为Hz):
+startFreq = 2.84e9
+# 结束频率 (单位为Hz):
+endFreq = 2.90e9
+# 频率步进数:
+N_scanPts = 121
+# SRS 输出的微波功率 (dBm) - 不要超过您放大器的最大输入功率:
+# 注意：此参数仅适用于 SRS 信号发生器
+microwavePower = 30
+# B210 设备的增益设置（dB）- 范围通常为 0-70 dB，过高的增益可能导致信号失真
+# 建议增益值：50-65 dB
+B210_gain = 70 
+# 脉冲序列参数:----------------------------------------------------
+# ESR 脉冲序列单次迭代中信号采集半周期的持续时间:
+# 每个完整的ESR采集周期包括两个半周期：
+# 1. 微波开启时的信号采集（持续t_duration）
+# 2. 微波关闭时的背景采集（持续t_duration）
+# 通过比较这两个半周期的采集结果，可以计算出真正的信号强度，去除背景噪声的影响
+# 注意：t_duration值需要根据具体实验条件（如NV色心荧光强度、DAQ采样率等）进行优化
+# 过长的t_duration会增加实验时间，过短则可能导致信号信噪比不足；
+# 对于 ESR 实验，典型值为 50-200 微秒
+# 具体值需要根据 NV 色心的荧光强度和实验要求进行调整
+t_duration = 10*us
+# 每个频率点采集的荧光测量样本数:
+Nsamples = 5000
+# 平均运行次数:
 Navg = 1
-#DAQ 超时, 单位为秒:
+#DAQ 超时，单位为秒:
 DAQtimeout = 10
-# 对比度 mode
-contrastMode ='ratio_SignalOverReference'
-# 绘图 options--------------------------------------------------------------
-# Live 绘图 update option
+# 对比度模式
+contrastMode ='signalOnly'
+# 绘图选项--------------------------------------------------------------
+# 实时绘图更新选项
 livePlotUpdate = True
-# 绘制 脉冲序列 option  - set to true to 绘图 the 脉冲序列
-plotPulseSequence = True
-# 绘制 x axis units (Hz, kHz, MHz or GHz)
-plotXaxisUnits = Hz
-# 绘制 x axis label
-xAxisLabel = 'Frequency (Hz)'
-# 保存 options------------------------------------------------------------------
-# 保存 interval for first 扫描 through all 频率 点s:
+# 绘制脉冲序列选项 - 设置为 true 可绘制脉冲序列
+plotPulseSequence = False
+# 绘制 x 轴单位 (Hz, kHz, MHz 或 GHz)
+plotXaxisUnits = MHz
+# 绘制 x 轴标签
+xAxisLabel = 'Frequency (MHz)'
+# 保存选项------------------------------------------------------------------
+# 首次扫描所有频率点时的保存间隔:
 saveSpacing_inScanPts = 2
-# 保存 interval in averaging 运行s:
+# 平均运行中的保存间隔:
 saveSpacing_inAverages = 1
-# Path to folder where 数据 will be 保存d:
+# 数据保存文件夹路径:
 savePath = os.getcwd()+"\\Saved_Data\\"
-# File name for 数据 file
+# 数据文件名称
 saveFileName = "ESR_"
-# Averaging options:------------------------------------------------------------
-# Option to do shot by shot 对比度 normalization:
-shotByShotNormalization = False
-# Option to randomize order of 扫描 点s
-randomize = True
-#------------------------- END OF USER 输入 ----------------------------------#
+# 平均选项:------------------------------------------------------------
+# 逐次采样对比度归一化选项:
+shotByShotNormalization = True
+# 随机化扫描点顺序的选项
+randomize = False
+#------------------------- 用户输入结束 ----------------------------------#
 
 scannedParam = np.linspace(startFreq,endFreq, N_scanPts, endpoint=True)
-#序列字符串:
+# 序列字符串:
 sequence = 'ESRseq'
-#扫描 start Name
+# 扫描起始名称
 scanStartName = 'startFreq'
-#扫描 end Name
+# 扫描结束名称
 scanEndName = 'endFreq'
-#PB 通道s
+# PB 通道
 PBchannels = {'AOM':AOM,'uW':uW,'DAQ':DAQ,'STARTtrig':STARTtrig}
-#序列 args
+# 序列参数
 sequenceArgs = [t_duration]
-#Make 保存 file path
+# 创建保存文件路径
 dateTimeStr = strftime("%Y-%m-%d_%Hh%Mm%Ss", localtime())
 dataFileName = savePath + saveFileName+ dateTimeStr +".txt"
-#Make param file path
+# 创建参数文件路径
 paramFileName = savePath + saveFileName+dateTimeStr+'_PARAMS'+".txt"
-#Param file 保存 settings
+# 参数文件保存设置
 formattingSaveString = "%s\t%d\n%s\t%d\n%s\t%d\n%s\t%f\n%s\t%f\n%s\t%f\n%s\t%f\n%s\t%r\n%s\t%r\n%s\t%r\n%s\t%d\n%s\t%d\n%s\t%s\n"
 expParamList =  ['N_scanPts:',N_scanPts,'Navg:',Navg,'Nsamples:',Nsamples,'startFreq:',scannedParam[0],'endFreq:',scannedParam[-1],'microwavePower:',microwavePower,'t_duration:',t_duration,'shotByShotNormalization:',shotByShotNormalization,'randomize:',randomize,'plotPulseSequence:',plotPulseSequence,'saveSpacing_inScanPts:',saveSpacing_inScanPts,'saveSpacing_inAverages:',saveSpacing_inAverages,'dataFileName:',dataFileName]
 
@@ -150,6 +154,13 @@ def updateSequenceArgs():
 	sequenceArgs = [t_duration]
 	return sequenceArgs
 	
+
 def updateExpParamList():
-	expParamList =  ['N_scanPts:',N_scanPts,'Navg:',Navg,'Nsamples:',Nsamples,'startFreq:',scannedParam[0],'endFreq:',scannedParam[-1],'microwavePower:',microwavePower,'t_duration:',t_duration,'shotByShotNormalization:',shotByShotNormalization,'randomize:',randomize,'plotPulseSequence:',plotPulseSequence,'saveSpacing_inScanPts:',saveSpacing_inScanPts,'saveSpacing_inAverages:',saveSpacing_inAverages,'dataFileName:',dataFileName]
-	return expParamList
+	# 每次更新参数列表时生成新的时间戳
+	dateTimeStr = strftime("%Y-%m-%d_%Hh%Mm%Ss", localtime())
+	# 更新文件名
+	dataFileName = savePath + saveFileName+ dateTimeStr +".txt"
+	paramFileName = savePath + saveFileName+dateTimeStr+'_PARAMS'+".txt"
+	# 更新参数列表
+	expParamList =  ['N_scanPts:',N_scanPts,'Navg:',Navg,'Nsamples:',Nsamples,'startFreq:',scannedParam[0],'endFreq:',scannedParam[-1],'microwavePower:',microwavePower,'B210_gain:',B210_gain,'t_duration:',t_duration,'shotByShotNormalization:',shotByShotNormalization,'randomize:',randomize,'plotPulseSequence:',plotPulseSequence,'saveSpacing_inScanPts:',saveSpacing_inScanPts,'saveSpacing_inAverages:',saveSpacing_inAverages,'dataFileName:',dataFileName]
+	return expParamList, dataFileName, paramFileName

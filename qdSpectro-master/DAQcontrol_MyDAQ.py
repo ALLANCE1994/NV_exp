@@ -14,33 +14,53 @@
 # 无论是在合同诉讼、侵权行为还是其他方面，由本软件或本软件的使用或
 # 其他交易引起的或与之相关的。
 import nidaqmx
+import os
 from  nidaqmx.constants import *
 from connectionConfig import *
 import sys
 
 def configureDAQ(Nsamples):
 	try:
+		print(f"正在配置DAQ，样本数: {Nsamples}")
+		print(f"DAQ_APDInput: {DAQ_APDInput}")
+		print(f"DAQ_MaxSamplingRate: {DAQ_MaxSamplingRate}")
+		print(f"minVoltage: {minVoltage}, maxVoltage: {maxVoltage}")
+		
 		# 创建并配置模拟输入电压任务
 		NsampsPerDAQread=2*Nsamples
 		readTask = nidaqmx.Task()
+		print("创建DAQ任务成功")
+		
 		# 原始配置：使用RSE（参考单端）终端配置
 		# channel = readTask.ai_channels.add_ai_voltage_chan(DAQ_APDInput,"",TerminalConfiguration.RSE,minVoltage,maxVoltage,VoltageUnits.VOLTS)
 		# 修改后：使用Diff（差分）终端配置，适用于MyDAQ
 		channel = readTask.ai_channels.add_ai_voltage_chan(DAQ_APDInput,"",TerminalConfiguration.DIFF,minVoltage,maxVoltage,VoltageUnits.VOLTS)
+		print("添加模拟输入通道成功")
+		
 		# 配置采样时钟（使用内部时钟源，因为MyDAQ不支持外部时钟路由）
 		readTask.timing.cfg_samp_clk_timing(DAQ_MaxSamplingRate, "", Edge.RISING, AcquisitionType.FINITE, NsampsPerDAQread)
+		print("配置采样时钟成功")
+		
 		# 配置转换时钟（使用内部时钟源）
 		# readTask.timing.ai_conv_src = DAQ_SampleClk
 		# readTask.timing.ai_conv_active_edge = Edge.RISING
+		
 		# 配置开始触发（MyDAQ不支持，已注释）
 		# readStartTrig = readTask.triggers.start_trigger
 		# readStartTrig.cfg_dig_edge_start_trig(DAQ_StartTrig,Edge.RISING)
+		
+		print("DAQ配置成功")
 	except Exception as excpt:
-		print('配置 DAQ 时出错。请检查您的 DAQ 是否已连接并通电。异常详情：', type(excpt).__name__,'.',excpt)
+		print('配置 DAQ 时出错。请检查您的 DAQ 是否已连接并通电。')
+		print(f'异常类型: {type(excpt).__name__}')
+		print(f'异常信息: {excpt}')
+		print(f'当前工作目录: {os.getcwd()}')
+		print(f'DAQ_APDInput: {DAQ_APDInput}')
 		# 修复：使用正确的变量名readTask
 		if 'readTask' in locals():
 			closeDAQTask(readTask)
-		sys.exit()
+		# 不要直接退出，而是返回None，让调用者处理错误
+		return None
 	return readTask
 
 def readDAQ(task,N,timeout):

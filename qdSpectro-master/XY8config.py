@@ -1,12 +1,12 @@
-# XY8配置.py  
+# XY8配置.py
 # 版权所有 2018 Diana Prado Lopes Aude Craik
 
-# 特此免费授予许可, free of charge, to any person 
+# 特此免费授予许可, free of charge, to any person
 # obtaining a copy of this software and associated documentation
 # files (the "Software"), to deal in the Software without
 # restriction, including without limitation the rights to use, copy,
 # modify, merge, publish, distribute, sublicense, and/or sell copies
-# of the Software, and to permit persons to whom the Software is 
+# of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
 
 # 上述版权声明 and this permission notice shall be
@@ -25,7 +25,7 @@
 # XY8实验配置
 本脚本可用于配置mainControl.py以运行XY8实验。氮空位（NV）金刚石样品发出的荧光信号，会随XY8脉冲序列中π脉冲间扫描延时的时长变化而被记录（详见实验方案），数据将以制表符分隔的文本文件形式保存（保存选项详见下文）。延时扫描范围为从startTau至endTau，共分为N_scanPts个扫描步长。
 
-在每个扫描点，脚本会采集2*Nsamples次荧光读数，通过在连续采样中对脉冲序列最后一个π/2脉冲进行180°相移，得到两组荧光计数读数R1和R2，并据此计算对比度（详见下文“对比度设置”部分说明）。其中，第一组读数与第二组读数各采集Nsamples次。首次扫描完成后，脚本会将扫描过程重复Navg次，并对所有扫描轮次中各扫描点的对比度取平均值（对比度定义与平均选项详见下文）。
+在每个扫描点，脚本会采集2*Nsamples次荧光读数，通过在连续采样中对脉冲序列最后一个π/2脉冲进行180°相移，得到两组荧光计数读数R1和R2，并据此计算对比度（详见下文"对比度设置"部分说明）。其中，第一组读数与第二组读数各采集Nsamples次。首次扫描完成后，脚本会将扫描过程重复Navg次，并对所有扫描轮次中各扫描点的对比度取平均值（对比度定义与平均选项详见下文）。
 
 ---
 
@@ -64,7 +64,7 @@
 ---
 
 ## IQ补偿延时
-为补偿线缆与仪器带来的延时，需在SRS信号源I/Q调制的开关脉冲沿与微波开关脉冲沿之间添加延时参数`IQpadding`，确保I/Q调制在整个微波脉冲持续时间内保持开启。该延时参数需配合示波器观测脉冲序列后谨慎修改，若需调整，可在下文用户输入区的“高级用户选项”中找到对应设置。
+为补偿线缆与仪器带来的延时，需在SRS信号源I/Q调制的开关脉冲沿与微波开关脉冲沿之间添加延时参数`IQpadding`，确保I/Q调制在整个微波脉冲持续时间内保持开启。该延时参数需配合示波器观测脉冲序列后谨慎修改，若需调整，可在下文用户输入区的"高级用户选项"中找到对应设置。
 
 ---
 
@@ -84,6 +84,7 @@
   注：本脚本扫描的延时为脉冲序列中π脉冲之间的间隔，该时长是初始/末位π/2脉冲与首个/末个π脉冲间延时的两倍。因此，该延时的步长至少为脉冲发生器最高时间分辨率（t_min）的两倍
 - **microwavePower**：SRS信号源输出功率（单位：dBm）
   警告：该值不得超过与SRS输出端相连的任意放大器的输入功率上限
+- **B210_gain**：B210设备的增益设置（dB）- 范围通常为0-70 dB，过高的增益可能导致信号失真。建议增益值：50-65 dB。
 - **microwaveFrequency**：SRS信号源输出微波频率（单位：Hz）
 - **t_AOM**：声光调制器（AOM）脉冲持续时间（单位：ns）
 - **t_readoutDelay**：AOM脉冲启动至DAQ采集脉冲的延时（单位：ns），最优延时可通过optimReadoutDelay.py脚本确定（详见实验方案论文第54步）
@@ -92,16 +93,16 @@
 - **Nsamples**：每个扫描点的荧光测量采样次数
 - **Navg**：平均轮次（即延时扫描的重复次数）
 - **DAQtimeout**：DAQ等待目标采样数就绪（即完成采集）的最长等待时间（单位：秒）
-- **contrastMode**：本实验需设为`ratio_DifferenceOverSum`，可选模式还包括`ratio_SignalOverReference`与`signalOnly`（详见前文“对比度设置”）
-- **livePlotUpdate**：设为True可在数据采集时实时更新绘图（详见前文“绘图选项”）
-- **plotPulseSequence**：设为True可在实验开始时绘制脉冲序列（详见前文“绘图选项”）
+- **contrastMode**：本实验需设为`ratio_DifferenceOverSum`，可选模式还包括`ratio_SignalOverReference`与`signalOnly`（详见前文"对比度设置"）
+- **livePlotUpdate**：设为True可在数据采集时实时更新绘图（详见前文"绘图选项"）
+- **plotPulseSequence**：设为True可在实验开始时绘制脉冲序列（详见前文"绘图选项"）
 - **plotXaxisUnits**：数据绘图的横轴单位，可选ns、us、ms
 - **xAxisLabel**：数据绘图的横轴标签
 - **saveSpacing_inScanPts**：首次扫描中数据保存的扫描点间隔数
 - **saveSpacing_inAverages**：首次完整扫描后，数据保存的平均轮次间隔数
 - **savePath**：数据保存文件夹路径，默认保存在脚本所在目录下的Saved_Data文件夹中
 - **saveFileName**：数据保存文件名，运行脚本时会自动在文件名后追加执行日期与时间
-- **shotByShotNormalization**：设为True可开启逐次采样对比度归一化（详见前文“平均选项”）
+- **shotByShotNormalization**：设为True可开启逐次采样对比度归一化（详见前文"平均选项"）
 - **randomize**：设为True可对首次扫描后的所有扫描打乱扫描点顺序
 - **IQpadding**：IQ调制开关脉冲沿与微波开关脉冲沿之间的延时（单位：ns）
 """
@@ -124,8 +125,12 @@ endTau = 480
 N_scanPts = 45
 # 微波 功率 输出 from SRS(dBm) - DO NOT EXCEED YOUR AMPLIFIER'S MAXIMUM 输入 功率:
 microwavePower = -5
+# B210 设备的增益设置（dB）- 范围通常为 0-70 dB，过高的增益可能导致信号失真
+# 注意：B210 使用增益（dB）而不是功率（dBm）
+# 建议增益值：50-65 dB
+B210_gain = 70
 # 微波 频率 (Hz):
-microwaveFrequency = 2e9 
+microwaveFrequency = 2e9
 # Pulse 序列 参数s:----------------------------------------------------
 # AOM pulse 持续时间 (单位为ns)
 t_AOM= 5*us
@@ -167,14 +172,14 @@ shotByShotNormalization = False
 # Option to randomize order of 扫描 点s
 randomize = True
 #Advanced user options--------------------------------------------------------------
-# IQ padding, 单位为ns (this should be left at t_min*round(30*ns/t_min),unless the user  
-# requires an especially short 自由进动 延迟 - this 参数 should only be 
+# IQ padding, 单位为ns (this should be left at t_min*round(30*ns/t_min),unless the user
+# requires an especially short 自由进动 延迟 - this 参数 should only be
 # editted with close monitoring of the 脉冲序列 on the scope.
 IQpadding = t_min*round(30*ns/t_min)
 #------------------------- END OF USER 输入 ----------------------------------#
 
 
-scannedParam = np.linspace(startTau,endTau, N_scanPts, endpoint=True) 
+scannedParam = np.linspace(startTau,endTau, N_scanPts, endpoint=True)
 #序列字符串:
 sequence = 'XY8seq'
 #扫描 start Name
@@ -191,13 +196,13 @@ dataFileName = savePath + saveFileName+ dateTimeStr +".txt"
 #Make param file path
 paramFileName = savePath + saveFileName+dateTimeStr+'_PARAMS'+".txt"
 #Param file 保存 settings
-formattingSaveString = "%s\t%d\n%s\t%d\n%s\t%d\n%s\t%f\n%s\t%f\n%s\t%f\n%s\t%f\n%s\t%f\n%s\t%f\n%s\t%f\n%s\t%f\n%s\t%f\n%s\t%r\n%s\t%r\n%s\t%r\n%s\t%d\n%s\t%d\n%s\t%s\n"
-expParamList = ['N_scanPts:',N_scanPts,'Navg:',Navg,'Nsamples:',Nsamples,'startTau:',scannedParam[0],'endTau:',scannedParam[-1],'microwavePower:',microwavePower,'microwaveFrequency',microwaveFrequency,'t_AOM:',t_AOM, 't_readoutDelay:',t_readoutDelay,'t_pi',t_pi,'N',N,'IQpadding',IQpadding,'shotByShotNormalization:',shotByShotNormalization,'randomize:',randomize,'plotPulseSequence:',plotPulseSequence,'saveSpacing_inScanPts:',saveSpacing_inScanPts,'saveSpacing_inAverages:',saveSpacing_inAverages,'dataFileName:',dataFileName]
+formattingSaveString = "%s\t%d\n%s\t%d\n%s\t%d\n%s\t%f\n%s\t%f\n%s\t%f\n%s\t%f\n%s\t%f\n%s\t%f\n%s\t%f\n%s\t%f\n%s\t%f\n%s\t%f\n%s\t%r\n%s\t%r\n%s\t%r\n%s\t%d\n%s\t%d\n%s\t%s\n"
+expParamList = ['N_scanPts:',N_scanPts,'Navg:',Navg,'Nsamples:',Nsamples,'startTau:',scannedParam[0],'endTau:',scannedParam[-1],'microwavePower:',microwavePower,'B210_gain:',B210_gain,'microwaveFrequency',microwaveFrequency,'t_AOM:',t_AOM, 't_readoutDelay:',t_readoutDelay,'t_pi',t_pi,'N',N,'IQpadding',IQpadding,'shotByShotNormalization:',shotByShotNormalization,'randomize:',randomize,'plotPulseSequence:',plotPulseSequence,'saveSpacing_inScanPts:',saveSpacing_inScanPts,'saveSpacing_inAverages:',saveSpacing_inAverages,'dataFileName:',dataFileName]
 
 def updateSequenceArgs():
 	sequenceArgs = [t_AOM,t_readoutDelay,t_pi,IQpadding,N]
 	return sequenceArgs
-	
+
 def updateExpParamList():
-	expParamList = ['N_scanPts:',N_scanPts,'Navg:',Navg,'Nsamples:',Nsamples,'startTau:',scannedParam[0],'endTau:',scannedParam[-1],'microwavePower:',microwavePower,'microwaveFrequency',microwaveFrequency,'t_AOM:',t_AOM, 't_readoutDelay:',t_readoutDelay,'t_pi',t_pi,'N',N,'IQpadding',IQpadding,'shotByShotNormalization:',shotByShotNormalization,'randomize:',randomize,'plotPulseSequence:',plotPulseSequence,'saveSpacing_inScanPts:',saveSpacing_inScanPts,'saveSpacing_inAverages:',saveSpacing_inAverages,'dataFileName:',dataFileName]
-	return expParamList
+	expParamList = ['N_scanPts:',N_scanPts,'Navg:',Navg,'Nsamples:',Nsamples,'startTau:',scannedParam[0],'endTau:',scannedParam[-1],'microwavePower:',microwavePower,'B210_gain:',B210_gain,'microwaveFrequency',microwaveFrequency,'t_AOM:',t_AOM, 't_readoutDelay:',t_readoutDelay,'t_pi',t_pi,'N',N,'IQpadding',IQpadding,'shotByShotNormalization:',shotByShotNormalization,'randomize:',randomize,'plotPulseSequence:',plotPulseSequence,'saveSpacing_inScanPts:',saveSpacing_inScanPts,'saveSpacing_inAverages:',saveSpacing_inAverages,'dataFileName:',dataFileName]
+	return expParamList, dataFileName, paramFileName

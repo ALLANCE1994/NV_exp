@@ -79,7 +79,7 @@ def validateUserInput(expCfg):
 			print('t_duration 现在设置为', expCfg.t_duration,'纳秒')
 	
 	# 检查 t_readoutDelay 和 t_AOM 是否是 t_min 的倍数：
-	if expCfg.sequence in ['RabiSeq','T2seq','XY8seq', 'correlSpecSeq', 'T1seq']:
+	if expCfg.sequence in ['RabiSeq','T2seq','XY8seq', 'correlSpecSeq', 'T1seq', 'PulsedODMRseq']:
 		if expCfg.t_readoutDelay%t_min:
 			print('错误：t_readoutDelay 设置为', expCfg.t_readoutDelay,'纳秒，它不是',t_min,'纳秒的倍数。请将 t_readoutDelay 设置为',t_min,'纳秒的整数倍。')
 			sys.exit()
@@ -92,21 +92,6 @@ def validateUserInput(expCfg):
 			sys.exit()
 		if expCfg.t_readoutDelay<(5*t_min):
 			print('错误：t_readoutDelay 必须大于',(5*t_min),'纳秒！')
-			sys.exit()
-
-	# 检查 PulsedODMRseq 的特定参数：
-	if expCfg.sequence == 'PulsedODMRseq':
-		if expCfg.t_readoutDelay%t_min:
-			print('错误：t_readoutDelay 设置为', expCfg.t_readoutDelay,'纳秒，它不是',t_min,'纳秒的倍数。请将 t_readoutDelay 设置为',t_min,'纳秒的整数倍。')
-			sys.exit()
-		if expCfg.t_readoutLaser<t_min or expCfg.t_readoutLaser%t_min:
-			print('错误：t_readoutLaser 设置为', expCfg.t_readoutLaser,'纳秒，它必须大于',t_min,'纳秒且是',t_min,'纳秒的整数倍。')
-			sys.exit()
-		if expCfg.t_integration<t_min or expCfg.t_integration%t_min:
-			print('错误：t_integration 设置为', expCfg.t_integration,'纳秒，它必须大于',t_min,'纳秒且是',t_min,'纳秒的整数倍。')
-			sys.exit()
-		if expCfg.t_integration > expCfg.t_readoutLaser:
-			print('错误：t_integration（', expCfg.t_integration,'纳秒）不能大于 t_readoutLaser（', expCfg.t_readoutLaser,'纳秒）！')
 			sys.exit()
 	
 	# 检查 PulsedODMRseq 中的 t_pi 是否是 t_min 的倍数且大于 t_min：
@@ -286,32 +271,101 @@ def runExperiment(expConfigFile):
 			makedirs(expCfg.savePath)
 			print('警告：保存目录不存在，正在工作目录中创建名为 Saved_Data 的文件夹。数据将保存到此目录。')
 		
-		# 初始化B210相关变量
-		B210_available = False
-		B210 = None
+		# 初始化SRS相关变量
+		SRS_available = False
+		SRS = None
 		
-		# 初始化 B210 并对 PulseBlaster 进行编程
+		# 初始化 SRS 并对 PulseBlaster 进行编程
 		try:
-			B210 = SRSctl.initSRS(conCfg.GPIBaddr,conCfg.modelName)
-			B210_available = True
-			print("✅ B210信号发生器初始化成功")
-		except Exception as e:
-			print(f"警告：无法初始化B210信号发生器: {e}")
-			print("将跳过B210相关操作，继续执行其他功能")
-			B210_available = False
-			B210 = None
-		
-		# 确保必要的配置参数存在
-		if not hasattr(expCfg, 'plotXaxisUnits'):
+			SRS = SRSctl.initSRS(conCfg.GPIBaddr,conCfg.modelName)
+			SRS_available = True
+			print("✅ SRS信号发生器初始化成功")
+			# 使用ESRconfig.py中的参数设置，而不是硬编码的默认值
+			# 这些参数已经在导入配置文件时设置好了
+			# expCfg.scannedParam 已经在导入时由 np.linspace(startFreq, endFreq, N_scanPts) 设置
+			# expCfg.N_scanPts 已经在导入时设置
+			# expCfg.microwavePower 已经在导入时设置
+			# expCfg.contrastMode 已经在导入时设置
+			# expCfg.shotByShotNormalization 已经在导入时设置
+			# expCfg.updateSequenceArgs 和 expCfg.updateExpParamList 已经在导入时设置
+			# expCfg.sequence 已经在导入时设置
+			# expCfg.savePath 已经在导入时设置
+			# expCfg.plotPulseSequence 已经在导入时设置
+			# expCfg.randomize 已经在导入时设置
+			# expCfg.livePlotUpdate 已经在导入时设置
+			# expCfg.saveSpacing_inScanPts 已经在导入时设置
+			# expCfg.saveSpacing_inAverages 已经在导入时设置
+			# expCfg.DAQtimeout 已经在导入时设置
 			expCfg.plotXaxisUnits = 1.0
-		if not hasattr(expCfg, 'xAxisLabel'):
-			expCfg.xAxisLabel = "Frequency (Hz)"
-		if not hasattr(expCfg, 'formattingSaveString'):
+			if not hasattr(expCfg, 'xAxisLabel'):
+				expCfg.xAxisLabel = "Frequency (Hz)"
+			# 调用updateExpParamList函数获取带有时间戳的文件名
+			if hasattr(expCfg, 'updateExpParamList'):
+				expParamList, dataFileName, paramFileName = expCfg.updateExpParamList()
+				expCfg.dataFileName = dataFileName
+				expCfg.paramFileName = paramFileName
+				expCfg.expParamList = expParamList
+			else:
+				# 如果没有updateExpParamList函数，使用默认文件名
+				expCfg.dataFileName = "./Saved_Data/ESR_data.txt"
+				expCfg.paramFileName = "./Saved_Data/ESR_params.txt"
 			expCfg.formattingSaveString = "json"
-		if not hasattr(expCfg, 'PBchannels'):
 			expCfg.PBchannels = {"I": 0x01, "Q": 0x02, "STARTtrig": 0x04, "DAQ": 0x08, "AOM": 0x10, "MW": 0x20}
+		except Exception as e:
+			print(f"警告：无法初始化SRS信号发生器: {e}")
+			print("将跳过SRS相关操作，继续执行其他功能")
+			SRS_available = False
+			SRS = None
+			
+		# 设置默认参数（如果SRS不可用）
+		if not SRS_available:
+			# 确保必要的配置参数存在
+			if not hasattr(expCfg, 'microwavePower'):
+				expCfg.microwavePower = 10.0  # 默认微波功率
+			if not hasattr(expCfg, 'microwaveFrequency'):
+				expCfg.microwaveFrequency = 2.7e9  # 默认微波频率
+			if not hasattr(expCfg, 'scannedParam'):
+				expCfg.scannedParam = [2.7e9, 2.7001e9, 2.7002e9]  # 默认扫描频率范围
+			if not hasattr(expCfg, 'N_scanPts'):
+				expCfg.N_scanPts = len(expCfg.scannedParam)
+			if not hasattr(expCfg, 'updateSequenceArgs'):
+				expCfg.updateSequenceArgs = lambda: [1000000]  # 默认脉冲长度 1ms
+			if not hasattr(expCfg, 'updateExpParamList'):
+				expCfg.updateExpParamList = lambda: ['N_scanPts:', expCfg.N_scanPts, 'Navg:', 1, 'Nsamples:', 1000, 'startFreq:', 2.7e9, 'endFreq:', 3.0e9, 'microwavePower:', -5, 't_duration:', 80, 'shotByShotNormalization:', False, 'randomize:', False, 'plotPulseSequence:', True, 'saveSpacing_inScanPts:', 1, 'saveSpacing_inAverages:', 1, 'dataFileName:', 'data.txt']
+			if not hasattr(expCfg, 'sequence'):
+				expCfg.sequence = "ESRseq"
+			if not hasattr(expCfg, 'savePath'):
+				expCfg.savePath = "./Saved_Data"
+			if not hasattr(expCfg, 'plotPulseSequence'):
+				expCfg.plotPulseSequence = False
+			if not hasattr(expCfg, 'randomize'):
+				expCfg.randomize = False
+			if not hasattr(expCfg, 'livePlotUpdate'):
+				expCfg.livePlotUpdate = False
+			if not hasattr(expCfg, 'saveSpacing_inScanPts'):
+				expCfg.saveSpacing_inScanPts = 1
+			if not hasattr(expCfg, 'saveSpacing_inAverages'):
+				expCfg.saveSpacing_inAverages = 1
+			if not hasattr(expCfg, 'DAQtimeout'):
+				expCfg.DAQtimeout = 10.0
+			if not hasattr(expCfg, 'contrastMode'):
+				expCfg.contrastMode = "signalOnly"
+			if not hasattr(expCfg, 'shotByShotNormalization'):
+				expCfg.shotByShotNormalization = False
+			if not hasattr(expCfg, 'plotXaxisUnits'):
+				expCfg.plotXaxisUnits = 1.0
+			if not hasattr(expCfg, 'xAxisLabel'):
+				expCfg.xAxisLabel = "Frequency (Hz)"
+			if not hasattr(expCfg, 'dataFileName'):
+				expCfg.dataFileName = "./Saved_Data/ESR_data.txt"
+			if not hasattr(expCfg, 'paramFileName'):
+				expCfg.paramFileName = "./Saved_Data/ESR_params.txt"
+			if not hasattr(expCfg, 'formattingSaveString'):
+				expCfg.formattingSaveString = "json"
+			if not hasattr(expCfg, 'PBchannels'):
+				expCfg.PBchannels = {"I": 0x01, "Q": 0x02, "STARTtrig": 0x04, "DAQ": 0x08, "AOM": 0x10, "MW": 0x20}
 
-		# 继续执行其他操作
+			# 继续执行其他操作
 		sequenceArgs = expCfg.updateSequenceArgs()
 		# 调用updateExpParamList函数获取参数列表和文件名
 		expParamList, dataFileName, paramFileName = expCfg.updateExpParamList()
@@ -320,30 +374,31 @@ def runExperiment(expConfigFile):
 
 		# 对 PB 进行编程
 		if expCfg.sequence != 'ESRseq':
-			if B210_available:
-				SRSctl.setSRS_Freq(B210, expCfg.microwaveFrequency)
+			if SRS_available:
+				SRSctl.setSRS_Freq(SRS, expCfg.microwaveFrequency)
 			seqArgList = [expCfg.scannedParam[-1]]
 			seqArgList.extend(sequenceArgs)
 			instructionArray=PBctl.programPB(expCfg.sequence,seqArgList)
 		else:
-			if B210_available:
-				SRSctl.setSRS_Freq(B210, expCfg.scannedParam[0])
+			if SRS_available:
+				SRSctl.setSRS_Freq(SRS, expCfg.scannedParam[0])
 			# 对 PB 进行编程
 			instructionArray=PBctl.programPB(expCfg.sequence,sequenceArgs)
 
-		# 启用 B210 输出（如果可用）
-		if B210_available:
+		# 启用 SRS 输出（如果可用）
+		if SRS_available:
 			# B210使用增益单位（dB），而不是功率单位（dBm）
+			# 注意：ESRconfig.py中的microwavePower参数对B210无效
 			# 从配置文件中获取B210增益值
 			if hasattr(expCfg, 'B210_gain'):
 				gain_value = expCfg.B210_gain
 			else:
 				gain_value = 60  # 默认值
 			print(f"使用B210增益值: {gain_value} dB")
-			SRSctl.setSRS_RFAmplitude(B210, gain_value)
-			SRSctl.setupSRSmodulation(B210,expCfg.sequence)
-			SRSctl.enableSRS_RFOutput(B210)
-			
+			SRSctl.setSRS_RFAmplitude(SRS, gain_value)
+			SRSctl.setupSRSmodulation(SRS,expCfg.sequence)
+			SRSctl.enableSRS_RFOutput(SRS)
+					
 		# 配置 DAQ
 		DAQclosed = False
 		DAQtask = DAQctl.configureDAQ(expCfg.Nsamples)
@@ -352,7 +407,7 @@ def runExperiment(expConfigFile):
 			sys.exit(1)
 			
 		if expCfg.plotPulseSequence:
-			# 绘制序列
+		# 绘制序列
 			plt.figure(0)
 			[t_us,channelPulses,yTicks]=seqCtl.plotSequence(instructionArray,expCfg.PBchannels)
 			for channel in channelPulses:
@@ -360,9 +415,9 @@ def runExperiment(expConfigFile):
 				plt.yticks(yTicks)
 				plt.xlabel('时间 (微秒)')
 				plt.ylabel('通道')
-				# 如果我们正在绘制脉冲长度 <5*t_min 的 Rabi 序列，在序列绘图标题中警告用户
+				# 如果我们正在绘制脉冲长度 <5*t_min 的 Rabi 序列，在序列绘图标题中警告用户，发送到 PulseBlaster 微波通道的指令是针对 5*t_min 脉冲的，但同时会脉冲短脉冲标志以产生所需的脉冲长度
 				if expCfg.sequence == 'RabiSeq' and (seqArgList[0]<(5*t_min)):
-					plt.title('脉冲序列图（在最后一个扫描点）。关闭以继续实验...\n（注意：对于微波脉冲<5*t_min纳秒，微波通道被指令脉冲5*t_min纳秒，但PB的短脉冲标志同时被脉冲以产生所需的脉冲长度。）', fontsize=7)
+					plt.title('脉冲序列图（在最后一个扫描点）。关闭以继续实验...\n（注意：我们绘制发送到 PulseBlaster (PB) 每个通道的指令。对于微波脉冲<',5*t_min,'纳秒，微波\n通道 (PB_MW) 被指令脉冲',5*t_min,'纳秒，但 PB 的短脉冲标志同时被脉冲（未显示）以\n在 PB_MW 产生所需的输出脉冲长度。这可以在示波器上验证。）', fontsize=7)
 				else:
 					plt.title('脉冲序列图（在最后一个扫描点）\n 关闭以继续实验...')
 			plt.show()
@@ -382,10 +437,10 @@ def runExperiment(expConfigFile):
 				if i_run>0:
 					shuffle(expCfg.scannedParam)
 			for i_scanPoint in range (0, expCfg.N_scanPts):
-				# 设置下一次扫描迭代
+				# 设置下一次扫描迭代（例如，对于 ESR 实验，改变微波频率；对于 T2 实验，用新的延迟重新编程 pulseblaster）
 				if expCfg.sequence == 'ESRseq' or expCfg.sequence == 'PulsedODMRseq':
-					if B210_available:
-						SRSctl.setSRS_Freq(B210, expCfg.scannedParam[i_scanPoint])
+					if SRS_available:
+						SRSctl.setSRS_Freq(SRS, expCfg.scannedParam[i_scanPoint])
 				else:
 					seqArgList[0] = expCfg.scannedParam[i_scanPoint]
 					instructionArray= PBctl.programPB(expCfg.sequence,seqArgList)
@@ -393,11 +448,11 @@ def runExperiment(expConfigFile):
 				
 				# 读取 DAQ
 				cts=DAQctl.readDAQ(DAQtask,2*expCfg.Nsamples,expCfg.DAQtimeout)
-			
+		
 				# 提取信号和背景计数
 				sig = cts[0::2]
 				bkgnd = cts[1::2]
-						
+							
 				# 计算计数平均值
 				meanSignalCurrentRun[i_scanPoint] = np.mean(sig)
 				meanBackgroundCurrentRun[i_scanPoint] = np.mean(bkgnd)
@@ -413,8 +468,8 @@ def runExperiment(expConfigFile):
 						plt.xlabel(expCfg.xAxisLabel)
 						plt.draw()
 						plt.pause(0.0001)
-				
-				# 根据 saveSpacing_inPulseLengthPts 的间隔和最终延迟点保存数据
+					
+					# 根据 saveSpacing_inPulseLengthPts 的间隔和最终延迟点保存数据
 			if (i_scanPoint%expCfg.saveSpacing_inScanPts == 0) or (i_scanPoint==expCfg.N_scanPts-1):
 				data = np.zeros([i_scanPoint+1,3])
 				data[:,0] = expCfg.scannedParam[0:i_scanPoint+1]
@@ -493,9 +548,9 @@ def runExperiment(expConfigFile):
 				dataFile.close()
 				print(f"✅ 最终结果已保存到: {expCfg.dataFileName}")
 		
-		# 关闭 B210 输出（如果可用）
-		if B210_available:
-			SRSctl.disableSRS_RFOutput(B210)
+		# 关闭 SRS 输出（如果可用）
+		if SRS_available:
+			SRSctl.disableSRS_RFOutput(SRS)
 
 		# 关闭 DAQ 任务：
 		DAQctl.closeDAQTask(DAQtask)
@@ -505,14 +560,14 @@ def runExperiment(expConfigFile):
 		print('用户键盘中断。正在退出...')
 		sys.exit()
 	finally:
-		if B210_available: 
-			# 关闭 B210 输出
-			SRSctl.disableSRS_RFOutput(B210)
+		if SRS_available:	
+			# 关闭 SRS 输出
+			SRSctl.disableSRS_RFOutput(SRS)
 		if ('DAQtask' in vars()) and DAQtask is not None and (not DAQclosed):
-			# 关闭 DAQ 任务：
+		# 关闭 DAQ 任务：
 			DAQctl.closeDAQTask(DAQtask)
 			DAQclosed=True
-		# 停止脉冲卡输出
+			# 停止脉冲卡输出
 		try:
 			import spinapi
 			# 尝试初始化脉冲卡（如果尚未初始化）

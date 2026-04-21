@@ -1,12 +1,12 @@
 # T1配置.py
 # 版权所有 2018 Diana Prado Lopes Aude Craik
 
-# 特此免费授予许可, free of charge, to any person 
+# 特此免费授予许可, free of charge, to any person
 # obtaining a copy of this software and associated documentation
 # files (the "Software"), to deal in the Software without
 # restriction, including without limitation the rights to use, copy,
 # modify, merge, publish, distribute, sublicense, and/or sell copies
-# of the Software, and to permit persons to whom the Software is 
+# of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
 
 # 上述版权声明 and this permission notice shall be
@@ -24,7 +24,7 @@
 
 """
 # T1实验配置
-本脚本可用于配置mainControl.py以运行T1实验。氮空位（NV）金刚石样品发射的荧光信号会随T1脉冲序列中扫描的延迟时间变化而被记录（详见实验方案），数据将以制表符分隔的文本文件形式保存（保存选项详见下文）。延迟时间从start_t到end_t按N_scanPts个步长进行扫描。在每个扫描点，脚本会采集2*Nsamples次荧光读数，并在交替采样中施加额外的微波π脉冲（以制备mₛ=-1态而非mₛ=0态），从而获得两组荧光计数读数R1和R2，后续将据此计算对比度（详见下文“对比度设置”部分说明）。因此，第一组读数R1和第二组读数R2各对应Nsamples次采样。首次扫描完成后，脚本会将扫描过程重复Navg次，并对所有运行结果中每个扫描点的对比度取平均值（对比度定义及平均选项详见下文）。
+本脚本可用于配置mainControl.py以运行T1实验。氮空位（NV）金刚石样品发射的荧光信号会随T1脉冲序列中扫描的延迟时间变化而被记录（详见实验方案），数据将以制表符分隔的文本文件形式保存（保存选项详见下文）。延迟时间从start_t到end_t按N_scanPts个步长进行扫描。在每个扫描点，脚本会采集2*Nsamples次荧光读数，并在交替采样中施加额外的微波π脉冲（以制备mₛ=-1态而非mₛ=0态），从而获得两组荧光计数读数R1和R2，后续将据此计算对比度（详见下文"对比度设置"部分说明）。因此，第一组读数R1和第二组读数R2各对应Nsamples次采样。首次扫描完成后，脚本会将扫描过程重复Navg次，并对所有运行结果中每个扫描点的对比度取平均值（对比度定义及平均选项详见下文）。
 
 ## 对比度设置
 实验的对比度模式应设置为`ratio_DifferenceOverSum`。该模式下，对比度C通过两组读数R1和R2的差值与和值的比值计算得出，即C=(R1-R2)/(R1+R2)。出于调试目的，用户也可选择另外两种对比度模式：`signalOnly`（仅绘制R1数据）或`ratio_SignalOverReference`（绘制R1/R2比值）。
@@ -53,6 +53,7 @@
 - **end_t**：扫描的最长延迟时间，单位为纳秒。
 - **N_scanPts**：扫描的总点数。
 - **microwavePower**：SRS信号源的输出功率，单位为分贝毫瓦（dBm）。注意：该值不得超过与SRS输出端相连的任意放大器的输入功率上限。
+- **B210_gain**：B210设备的增益设置（dB）- 范围通常为0-70 dB，过高的增益可能导致信号失真。建议增益值：50-65 dB。
 - **microwaveFrequency**：SRS信号源输出的微波频率，单位为赫兹（Hz）。
 - **t_AOM**：声光调制器（AOM）脉冲持续时间，单位为纳秒。
 - **t_readoutDelay**：AOM脉冲起始至DAQ采集读数的延迟时间，单位为纳秒。
@@ -60,16 +61,16 @@
 - **Nsamples**：每个扫描点的荧光测量采样次数。
 - **Navg**：平均运行次数（即延迟扫描的重复次数）。
 - **DAQtimeout**：DAQ等待目标数量采样数据就绪（即完成采集）的最长时间，单位为秒。
-- **contrastMode**：本实验中该参数需设为`ratio_DifferenceOverSum`，其余可选模式为`ratio_SignalOverReference`和`signalOnly`（详见上文“对比度设置”说明）。
-- **livePlotUpdate**：设为True可在数据采集时实时更新图像（详见上文“绘图选项”）。
-- **plotPulseSequence**：设为True可在实验开始时绘制脉冲序列（详见上文“绘图选项”）。
+- **contrastMode**：本实验中该参数需设为`ratio_DifferenceOverSum`，其余可选模式为`ratio_SignalOverReference`和`signalOnly`（详见上文"对比度设置"说明）。
+- **livePlotUpdate**：设为True可在数据采集时实时更新图像（详见上文"绘图选项"）。
+- **plotPulseSequence**：设为True可在实验开始时绘制脉冲序列（详见上文"绘图选项"）。
 - **plotXaxisUnits**：设置数据图像的横轴单位，可选纳秒（ns）、微秒（us）、毫秒（ms）。
 - **xAxisLabel**：设置数据图像的横轴标签。
 - **saveSpacing_inScanPts**：首次扫描过程中，数据保存的频率点数间隔。
 - **saveSpacing_inAverages**：首次完整扫描后，数据保存的平均运行次数间隔。
 - **savePath**：数据保存文件夹路径。默认情况下，数据保存在脚本所在目录下名为Saved_Data的文件夹中。
 - **saveFileName**：数据保存文件名。该文件名后会自动附加脚本运行的日期和时间。
-- **shotByShotNormalization**：设为True可开启逐次采样对比度归一化（详见上文“平均选项”）。
+- **shotByShotNormalization**：设为True可开启逐次采样对比度归一化（详见上文"平均选项"）。
 - **randomize**：设为True可打乱首次扫描后所有扫描的频率点顺序。
 """
 #导入模块
@@ -83,7 +84,7 @@ t_min = 1e3/PBclk #in ns
 
 #-------------------------  USER 输入  ---------------------------------------#
 # 微波 扫描 参数s:----------------------------------------------------
-# 启动 pulse 持续时间 (单位为纳秒). 注意： if 
+# 启动 pulse 持续时间 (单位为纳秒). 注意： if
 # 启动_t<(t_readout延迟 + 2*t_min*round((1*us)/t_min) + t_pi), it will be shifted by
 #(t_readout延迟 + 2*t_min*round((1*us)/t_min) + t_pi) to avoid pulse overlap 错误s:
 start_t = 4.5e3
@@ -93,6 +94,10 @@ end_t = 5e5
 N_scanPts = 100
 # 微波 功率 输出 from SRS(dBm) - DO NOT EXCEED YOUR AMPLIFIER'S MAXIMUM 输入 功率:
 microwavePower = -5
+# B210 设备的增益设置（dB）- 范围通常为 0-70 dB，过高的增益可能导致信号失真
+# 注意：B210 使用增益（dB）而不是功率（dBm）
+# 建议增益值：50-65 dB
+B210_gain = 70
 # 微波 频率 (Hz):
 microwaveFrequency = 3e9
 # Pulse 序列 参数s:----------------------------------------------------
@@ -155,13 +160,13 @@ dataFileName = savePath + saveFileName+ dateTimeStr +".txt"
 #Make param file path
 paramFileName = savePath + saveFileName+dateTimeStr+'_PARAMS'+".txt"
 #Param file 保存 settings
-formattingSaveString = "%s\t%d\n%s\t%d\n%s\t%d\n%s\t%f\n%s\t%f\n%s\t%f\n%s\t%f\n%s\t%f\n%s\t%f\n%s\t%f\n%s\t%r\n%s\t%r\n%s\t%r\n%s\t%d\n%s\t%d\n%s\t%s\n"
-expParamList = ['N_scanPts:',N_scanPts,'Navg:',Navg,'Nsamples:',Nsamples,'start_t:',scannedParam[0],'end_t:',scannedParam[-1],'microwavePower:',microwavePower,'microwaveFrequency',microwaveFrequency,'t_AOM:',t_AOM, 't_readoutDelay:',t_readoutDelay,'t_pi',t_pi,'shotByShotNormalization:',shotByShotNormalization,'randomize:',randomize,'plotPulseSequence:',plotPulseSequence,'saveSpacing_inScanPts:',saveSpacing_inScanPts,'saveSpacing_inAverages:',saveSpacing_inAverages,'dataFileName:',dataFileName]
+formattingSaveString = "%s\t%d\n%s\t%d\n%s\t%d\n%s\t%f\n%s\t%f\n%s\t%f\n%s\t%f\n%s\t%f\n%s\t%f\n%s\t%f\n%s\t%f\n%s\t%f\n%s\t%r\n%s\t%r\n%s\t%r\n%s\t%d\n%s\t%d\n%s\t%s\n"
+expParamList = ['N_scanPts:',N_scanPts,'Navg:',Navg,'Nsamples:',Nsamples,'start_t:',scannedParam[0],'end_t:',scannedParam[-1],'microwavePower:',microwavePower,'B210_gain:',B210_gain,'microwaveFrequency',microwaveFrequency,'t_AOM:',t_AOM, 't_readoutDelay:',t_readoutDelay,'t_pi',t_pi,'shotByShotNormalization:',shotByShotNormalization,'randomize:',randomize,'plotPulseSequence:',plotPulseSequence,'saveSpacing_inScanPts:',saveSpacing_inScanPts,'saveSpacing_inAverages:',saveSpacing_inAverages,'dataFileName:',dataFileName]
 
 def updateSequenceArgs():
 	sequenceArgs = [t_AOM,t_readoutDelay,t_pi]
 	return sequenceArgs
-	
+
 def updateExpParamList():
-	expParamList = ['N_scanPts:',N_scanPts,'Navg:',Navg,'Nsamples:',Nsamples,'start_t:',scannedParam[0],'end_t:',scannedParam[-1],'microwavePower:',microwavePower,'microwaveFrequency',microwaveFrequency,'t_AOM:',t_AOM, 't_readoutDelay:',t_readoutDelay,'t_pi',t_pi,'shotByShotNormalization:',shotByShotNormalization,'randomize:',randomize,'plotPulseSequence:',plotPulseSequence,'saveSpacing_inScanPts:',saveSpacing_inScanPts,'saveSpacing_inAverages:',saveSpacing_inAverages,'dataFileName:',dataFileName]
-	return expParamList
+	expParamList = ['N_scanPts:',N_scanPts,'Navg:',Navg,'Nsamples:',Nsamples,'start_t:',scannedParam[0],'end_t:',scannedParam[-1],'microwavePower:',microwavePower,'B210_gain:',B210_gain,'microwaveFrequency',microwaveFrequency,'t_AOM:',t_AOM, 't_readoutDelay:',t_readoutDelay,'t_pi',t_pi,'shotByShotNormalization:',shotByShotNormalization,'randomize:',randomize,'plotPulseSequence:',plotPulseSequence,'saveSpacing_inScanPts:',saveSpacing_inScanPts,'saveSpacing_inAverages:',saveSpacing_inAverages,'dataFileName:',dataFileName]
+	return expParamList, dataFileName, paramFileName

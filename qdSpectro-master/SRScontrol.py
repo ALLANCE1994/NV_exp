@@ -7,7 +7,8 @@ import os
 import sys
 
 # 添加 UHD 的 bin 目录到系统 PATH 环境变量
-uhd_bin_path = r"D:\APP\UHD\bin"
+# uhd_bin_path = r"D:\APP\UHD\bin"
+uhd_bin_path = r"C:\Program Files\UHD\bin"
 os.environ["PATH"] = uhd_bin_path + ";" + os.environ["PATH"]
 
 # 添加 UHD 的 bin 目录到 DLL 搜索路径
@@ -27,7 +28,7 @@ usrp = None
 tx_streamer = None
 samples = None
 metadata = None
-buffer_size = 32768  # 缓冲区大小
+buffer_size = 65536  # 缓冲区大小
 is_rf_enabled = False  # RF 输出状态
 
 ##-------------------- 函数定义--------------------
@@ -48,8 +49,12 @@ def initSRS(GPIBaddr, modelName):
         print("USRP 对象创建成功")
         
         # 设置默认参数
-        rate = 16000000  # 16 MHz 采样率
-        gain = 50  # 50 dB 增益
+        rate = 8000000  # 8 MHz 采样率（降低采样率以提高稳定性）
+        # B210 使用增益（dB）来控制输出功率，而不是直接设置功率值
+        # 增益范围通常为 0-70 dB，过高的增益可能导致信号失真
+        # 建议增益值：50-65 dB
+        # 注意：实际增益值将在运行时通过 setSRS_RFAmplitude 函数设置
+        gain = 60  # 默认增益值（将被覆盖）
         freq = 2870000000  # 2.87 GHz 频率
         
         # 配置参数
