@@ -37,30 +37,18 @@ PB_MW = 5
 
 # DAQ 连接配置-------------------------------------------------------
 # 请在下面输入用于数据采集的 National Instruments DAQ 通道，如下所示：
-# DAQ_APDInput 是您连接光电探测器信号的 DAQ 的模拟输入通道。这里假设是参考单端（RSE）连接。如果用户希望使用差分连接，应相应修改下面的配置和 DAQcontrol.py 库中的配置（例如，如果使用 NI USB-6211 DAQ 卡，请参考 2009 年 4 月版本的 NI USB-621x 手册第 4 章，了解模拟输入连接选项）
+# DAQ_APDInput 是您连接光电探测器信号的 DAQ 的模拟输入通道。这里假设是参考单端（RSE）连接。
 # DAQ_SampleClk 是 DAQ 的外设功能接口（PFI）端子，您已将 PB_DAQ PulseBlaster 通道的输出连接到该端子（即生成 TTL 脉冲的 PulseBlaster 通道，作为采样时钟来定时数据采集）
 # DAQ_StartTrig 是 DAQ 的外设功能接口（PFI）端子，您已将 PB_STARTtrig PulseBlaster 通道的输出连接到该端子（即生成 TTL 脉冲的 PulseBlaster 通道，在每个实验扫描点触发数据采集的开始）
 
-# 原始NI DAQ配置
-# DAQ_APDInput = "Dev2/ai1"
-# DAQ_SampleClk = "PFI0"
-# DAQ_StartTrig = "PFI5"
-# DAQ_MaxSamplingRate = 250000
-
-# DAQ 连接配置-------------------------------------------------------
-# 请在下面输入用于数据采集的 National Instruments DAQ 通道，如下所示：
-# DAQ_APDInput 是您连接光电探测器信号的 DAQ 的模拟输入通道。这里假设是差分连接（myDAQ 推荐）。
-# DAQ_SampleClk 是 DAQ 的外设功能接口（PFI）端子，您已将 PB_DAQ PulseBlaster 通道的输出连接到该端子（即生成 TTL 脉冲的 PulseBlaster 通道，作为采样时钟来定时数据采集）
-# DAQ_StartTrig 是 DAQ 的外设功能接口（PFI）端子，您已将 PB_STARTtrig PulseBlaster 通道的输出连接到该端子（即生成 TTL 脉冲的 PulseBlaster 通道，在每个实验扫描点触发数据采集的开始）
-
-DAQ_APDInput = "myDAQ1/ai0"
+# NI USB-7855 配置
+DAQ_APDInput = "7855R/ai0"
 DAQ_SampleClk = "PFI0"       #PB_DAQ (通道 3)	DIO 0	采样时钟
 DAQ_StartTrig = "PFI1"       #PB_STARTtrig (通道 2)	DIO 1	触发脉冲
-DAQ_DOOutput = "myDAQ1/port0/line0"  # 数字输出通道，用于生成同步触发信号
 
 # 请在下面输入您的 National Instruments DAQ 的最大采样率（单位为样本/通道/秒）：
-DAQ_MaxSamplingRate = 200000
-# 请在下面设置最小电压和最大电压（单位为伏特），以匹配您的 DAQ 支持的 AI（模拟输入）电压范围，并适应您的光电探测器输出的电压范围（myDAQ 支持 ±10V）。
+DAQ_MaxSamplingRate = 1000000
+# 请在下面设置最小电压和最大电压（单位为伏特），以匹配您的 DAQ 支持的 AI（模拟输入）电压范围，并适应您的光电探测器输出的电压范围（NI USB-7855 支持 ±10V）。
 minVoltage=-10
 maxVoltage=10
 

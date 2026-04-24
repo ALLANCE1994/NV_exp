@@ -17,7 +17,7 @@ Copyright 2018 Diana Prado Lopes Aude Craik (MIT许可证)
 ## 1. 系统要求：
 
 ### 非标准硬件
-* National Instruments数据采集卡（DAQ），采样率至少为250 kSa/s（例如，National Instruments NI USB-6229、NI USB-6211或MyDAQ）。qdSpectro已使用NI USB-6229、NI USB-6211和MyDAQ进行测试。该代码设计为与National Instruments DAQ配合使用，如果使用其他数据采集系统，需要用户进行修改。
+* National Instruments数据采集卡（DAQ），采样率至少为250 kSa/s（例如，National Instruments NI USB-6229、NI USB-6211、MyDAQ或NI USB-7855）。qdSpectro已使用NI USB-6229、NI USB-6211、MyDAQ和NI USB-7855进行测试。该代码设计为与National Instruments DAQ配合使用，如果使用其他数据采集系统，需要用户进行修改。
 * 500MHz PulseBlaster卡（Spincore PulseBlasterESR PRO 500 MHz）。qdSpectro仅使用Spincore PulseBlasterESR PRO 500MHz卡进行了测试，但应与其他SpinCore PulseBlaster卡兼容。可以使用其他信号发生器，但需要用户修改qdSpectro代码。
 * SRS SG384信号发生器或USRP B210设备。qdSpectro设计为与SRS SG384信号发生器配合使用，仅使用此型号和SG 386型号进行了测试。它应该与其他SRS SG3800或SG3900型号兼容，但尚未使用这些型号进行测试。此外，现在也支持使用USRP B210设备作为微波信号源，替代传统的SRS信号发生器。
 * National Instruments USB/GPIB转换器（qdSpectro使用National Instruments GPIB-USB-HS进行测试）。用于将SRS信号发生器连接到PC（如果使用SRS信号发生器）。
@@ -80,8 +80,10 @@ http://www.spincore.com/support/SpinAPI_Python_Wrapper/Python_Wrapper_Main.shtml
 主控制和辅助库：
 * mainControl.py – 本协议中描述的所有实验都从mainControl.py脚本运行，该脚本将实验特定的配置文件作为参数。根据配置文件中定义的输入参数，mainControl.py运行实验、生成图表并保存结果。
 * mainControl_MyDAQ.py – 适配MyDAQ设备的主控制程序，功能与mainControl.py类似，但针对MyDAQ设备进行了优化。
+* mainControl_NI7855.py – 适配NI USB-7855设备的主控制程序，支持外部采样时钟和触发，实现高精度数据采集。
 * DAQcontrol.py – 包含配置DAQ的函数
 * DAQcontrol_MyDAQ.py – 包含配置MyDAQ设备的函数
+* DAQcontrol_NI7855.py – 包含配置NI USB-7855设备的函数，支持外部时钟和触发
 * SRScontrol.py – 包含控制SRS信号发生器的函数
 * B210_SRScontrol.py – 包含控制USRP B210设备的函数，用于替代SRS信号发生器
 * PBcontrol.py – 包含配置和编程PulseBlaster卡的函数，支持时钟信号生成
@@ -96,6 +98,7 @@ http://www.spincore.com/support/SpinAPI_Python_Wrapper/Python_Wrapper_Main.shtml
 3. 要运行实验，请打开Windows命令提示符，从工作目录运行：
    - 使用标准DAQ：```python mainControl.py __config```
    - 使用MyDAQ：```python mainControl_MyDAQ.py __config```
+   - 使用NI USB-7855：```python mainControl_NI7855.py __config```
 4. 要在实验完成前退出，请按Ctrl+C。
 
 关于单位的说明：用户输入参数的单位（在上面的步骤ii中输入）在___config.py文件的用户输入部分的注释中指定。为了更加清晰，我们还在此处注意到，qdSpectro软件包1.0版本（撰写本文时的当前版本）中时间变量的默认单位是纳秒。用户可以以纳秒为单位输入时间变量，或使用以下单位乘数之一：ns = 1，us = 1e3，ms = 1e6。例如，如果将变量endTau设置为10微秒，用户可以在相关___config.py文件的用户输入部分中输入endTau = 10000或endTau = 10*us。本文中的说明始终使用后一种格式。为了完整性，我们还注意到，在qdSpectro 1.0版本中，微波频率以赫兹为单位输入（例如，如果将变量startFreq设置为2.7GHz，用户应输入startFreq=2.7e9），微波功率以dBm为单位输入（例如，如果将变量microwavePower设置为0 dBm，用户应输入microwavePower=0）。运行不同版本qdSpectro的用户应参考该版本的README文件，了解任何版本特定的用户输入说明。
@@ -115,10 +118,12 @@ http://www.spincore.com/support/SpinAPI_Python_Wrapper/Python_Wrapper_Main.shtml
 ### 核心控制程序
 * **mainControl.py**：主控制程序，负责协调各模块运行实验，采集数据，绘制结果。是整个实验系统的控制中心。
 * **mainControl_MyDAQ.py**：适配MyDAQ设备的主控制程序，功能与mainControl.py类似，但针对MyDAQ设备进行了优化，提供了更适合MyDAQ的配置和错误处理。
+* **mainControl_NI7855.py**：适配NI USB-7855设备的主控制程序，支持外部采样时钟和触发，实现高精度数据采集，无需软件延迟。
 
 ### 设备控制模块
 * **DAQcontrol.py**：控制标准National Instruments DAQ设备的数据采集功能，包括配置采样率、通道和读取数据。
 * **DAQcontrol_MyDAQ.py**：专门为MyDAQ设备优化的DAQ控制模块，提供了针对MyDAQ设备特性的配置和数据采集功能。
+* **DAQcontrol_NI7855.py**：专门为NI USB-7855设备优化的DAQ控制模块，支持外部采样时钟和触发，实现高精度数据采集。
 * **SRScontrol.py**：控制SRS信号发生器，包括设置频率、功率、调制等参数，用于生成微波信号。
 * **B210_SRScontrol.py**：控制USRP B210设备，作为SRS信号发生器的替代品，用于生成微波信号。
 * **PBcontrol.py**：控制PulseBlaster卡，生成实验所需的脉冲序列和时钟信号。最近的更新添加了10MHz时钟信号生成功能，实现了时钟信号与实验脉冲序列的并行控制。
@@ -141,5 +146,12 @@ v1.1.0：
 * 添加了通道7输出波形的绘制功能
 * 修复了PulseBlaster重复初始化的问题
 * 改进了时钟信号的稳定性和连续性
+
+v1.2.0：
+* 添加了对NI USB-7855设备的支持，添加了mainControl_NI7855.py和DAQcontrol_NI7855.py
+* 支持外部采样时钟和触发，实现高精度数据采集
+* 移除了软件延迟，提高了实验效率和可靠性
+* 更新了connectionConfig.py配置文件，支持NI USB-7855的通道配置
+* 更新了README.md文档，添加了NI USB-7855的使用说明
 
 v1.0.1：T1config.py用户输入部分的文档小修复。
