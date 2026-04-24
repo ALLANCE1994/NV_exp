@@ -157,6 +157,10 @@ plotPulseSequence = True
 plotXaxisUnits = ns
 # 绘制 x axis label (ns, us or ms)
 xAxisLabel = 'Delay (ns)'
+# 差分数据保存选项 - 设为 True 保存差分数据:
+saveDifferentialData = True
+# 图片保存选项 - 设为 True 保存实验图片:
+savePlots = True
 # 保存 options------------------------------------------------------------------
 # 保存 interval for first 扫描 through all 延迟 点s:
 saveSpacing_inScanPts = 5

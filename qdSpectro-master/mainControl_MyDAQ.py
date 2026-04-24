@@ -47,7 +47,8 @@ from os.path import isdir
 from os import makedirs
 import math
 from importlib import import_module
-from time import localtime, strftime
+from time import localtime, strftime, sleep as time_sleep
+import time
 
 
 # 定义 t_min，PulseBlaster 的时间分辨率，由 1/(时钟频率) 给出：
@@ -273,6 +274,137 @@ def calculateContrast(contrastMode,signal,background):
 		print('错误：无法识别的对比度模式。有效的对比度模式为：\'ratio_SignalOverReference\'、\'ratio_DifferenceOverSum\' 或 \'signalOnly\'。请编辑配置脚本中的 contrastMode 变量以匹配有效的对比度模式。')
 		sys.exit()
 	return contrast
+
+
+def save_differential_data_and_plot(expCfg, x_data, signal, background, contrast, dateTimeStr):
+	"""保存差分数据和生成图片"""
+	# 检查是否启用了差分数据保存
+	save_diff_data = getattr(expCfg, 'saveDifferentialData', True)
+	save_plots_flag = getattr(expCfg, 'savePlots', True)
+	
+	if not save_diff_data and not save_plots_flag:
+		return
+	
+	# 对比度归一化（0-1范围）
+	print("\n对比度归一化:")
+	print(f"原始对比度范围: {np.min(contrast):.4f} ~ {np.max(contrast):.4f}")
+	
+	# 计算归一化对比度
+	contrast_min = np.min(abs(contrast))
+	contrast_max = np.max(abs(contrast))
+	
+	if contrast_max > contrast_min:
+		normalized_contrast = 1-(abs(contrast_max) - abs(contrast)) / contrast_max
+	else:
+		normalized_contrast = np.zeros_like(contrast)
+	
+	print(f"归一化对比度范围: {np.min(normalized_contrast):.4f} ~ {np.max(normalized_contrast):.4f}")
+	
+	if save_diff_data:
+		# 创建差分数据文件名
+		diff_data_file = expCfg.savePath + "differential_data_" + dateTimeStr + ".txt"
+		
+		# 计算差分数据
+		differential_data = np.zeros([len(x_data), 6])
+		differential_data[:, 0] = x_data
+		differential_data[:, 1] = signal
+		differential_data[:, 2] = background
+		differential_data[:, 3] = contrast
+		differential_data[:, 4] = signal - background  # 差分信号
+		differential_data[:, 5] = normalized_contrast  # 归一化对比度
+		
+		# 保存差分数据
+		with open(diff_data_file, 'w') as f:
+			f.write("# 扫描参数\t信号\t背景\t对比度\t差分信号\t归一化对比度\n")
+			for item in differential_data:
+				f.write("%.6f\t%.8f\t%.8f\t%.8f\t%.8f\t%.8f\n" % tuple(item))
+		
+		print(f"✅ 差分数据已保存到: {diff_data_file}")
+	
+	# 生成并保存图片
+	if save_plots_flag:
+		save_plots(expCfg, x_data, signal, background, contrast, normalized_contrast, dateTimeStr)
+
+
+def save_plots(expCfg, x_data, signal, background, contrast, normalized_contrast, dateTimeStr):
+	"""生成并保存实验图片"""
+	# 创建图片文件名
+	plot_file_prefix = expCfg.savePath + expCfg.saveFileName + dateTimeStr
+	
+	# 创建综合对比度图
+	plt.figure(figsize=(12, 8))
+	
+	# 子图1：原始对比度曲线
+	plt.subplot(2, 2, 1)
+	plt.plot([x/expCfg.plotXaxisUnits for x in x_data], contrast, 'b-', linewidth=2)
+	plt.ylabel('原始对比度')
+	plt.xlabel(expCfg.xAxisLabel)
+	plt.title('原始对比度曲线')
+	plt.grid(True)
+	
+	# 子图2：归一化对比度曲线
+	plt.subplot(2, 2, 2)
+	plt.plot([x/expCfg.plotXaxisUnits for x in x_data], normalized_contrast, 'g-', linewidth=2)
+	plt.ylabel('归一化对比度 (0-1)')
+	plt.xlabel(expCfg.xAxisLabel)
+	plt.title('归一化对比度曲线')
+	plt.grid(True)
+	
+	# 子图3：信号和背景曲线
+	plt.subplot(2, 2, 3)
+	plt.plot([x/expCfg.plotXaxisUnits for x in x_data], signal, 'r-', label='信号', linewidth=2)
+	plt.plot([x/expCfg.plotXaxisUnits for x in x_data], background, 'm-', label='背景', linewidth=2)
+	plt.ylabel('荧光强度')
+	plt.xlabel(expCfg.xAxisLabel)
+	plt.title('信号和背景曲线')
+	plt.legend()
+	plt.grid(True)
+	
+	# 子图4：差分信号曲线
+	plt.subplot(2, 2, 4)
+	differential_signal = signal - background
+	plt.plot([x/expCfg.plotXaxisUnits for x in x_data], differential_signal, 'c-', linewidth=2)
+	plt.ylabel('差分信号')
+	plt.xlabel(expCfg.xAxisLabel)
+	plt.title('差分信号曲线')
+	plt.grid(True)
+	
+	plt.tight_layout()
+	plt.savefig(plot_file_prefix + '_summary.png', dpi=300, bbox_inches='tight')
+	plt.close()
+	
+	# 创建单独的原始对比度图
+	plt.figure(figsize=(10, 6))
+	plt.plot([x/expCfg.plotXaxisUnits for x in x_data], contrast, 'b-', linewidth=2)
+	plt.ylabel('原始对比度')
+	plt.xlabel(expCfg.xAxisLabel)
+	plt.title('实验原始对比度曲线')
+	plt.grid(True)
+	plt.savefig(plot_file_prefix + '_contrast.png', dpi=300, bbox_inches='tight')
+	plt.close()
+	
+	# 创建单独的归一化对比度图
+	plt.figure(figsize=(10, 6))
+	plt.plot([x/expCfg.plotXaxisUnits for x in x_data], normalized_contrast, 'g-', linewidth=2)
+	plt.ylabel('归一化对比度 (0-1)')
+	plt.xlabel(expCfg.xAxisLabel)
+	plt.title('实验归一化对比度曲线')
+	plt.grid(True)
+	plt.savefig(plot_file_prefix + '_normalized_contrast.png', dpi=300, bbox_inches='tight')
+	plt.close()
+	
+	# 创建差分信号图
+	plt.figure(figsize=(10, 6))
+	differential_signal = signal - background
+	plt.plot([x/expCfg.plotXaxisUnits for x in x_data], differential_signal, 'c-', linewidth=2)
+	plt.ylabel('差分信号 (信号 - 背景)')
+	plt.xlabel(expCfg.xAxisLabel)
+	plt.title('差分信号曲线')
+	plt.grid(True)
+	plt.savefig(plot_file_prefix + '_differential.png', dpi=300, bbox_inches='tight')
+	plt.close()
+	
+	print(f"✅ 实验图片已保存到: {plot_file_prefix}_*.png")
 	
 def runExperiment(expConfigFile):
 	# 此函数运行实验，使用用户在实验配置文件（如 ESRconfig、Rabiconfig 等）中配置的输入参数，并绘制和保存数据。
@@ -346,10 +478,40 @@ def runExperiment(expConfigFile):
 			
 		# 配置 DAQ
 		DAQclosed = False
-		DAQtask = DAQctl.configureDAQ(expCfg.Nsamples)
-		if DAQtask is None:
-			print("错误：DAQ配置失败，无法继续实验")
-			sys.exit(1)
+		software_delay = 0  # 软件延迟时间（秒）
+		# 根据序列类型配置DAQ
+		if expCfg.sequence == 'ESRseq':
+			# 对于ESRseq，使用基于时间和样本数的配置
+			# 每个样本组的时间是2*t_duration（信号+参考）
+			acquisitionTimePerSample_ns = 2 * expCfg.t_duration
+			print(f"ESRseq模式：每个样本组时间 = {acquisitionTimePerSample_ns} ns, 样本组数 = {expCfg.Nsamples}")
+			result = DAQctl.configureDAQbyTime(acquisitionTimePerSample_ns, expCfg.Nsamples)
+			if result is None:
+				print("错误：DAQ配置失败，无法继续实验")
+				sys.exit(1)
+			DAQtask, actualTotalSamples, software_delay = result
+		elif expCfg.sequence == 'RabiSeq':
+			# 对于RabiSeq，使用专门的Rabi配置函数
+			# 获取Rabi实验所需的参数
+			t_AOM = expCfg.t_AOM
+			t_readoutDelay = expCfg.t_readoutDelay
+			t_wait = expCfg.t_wait
+			# 使用最大的微波脉冲持续时间来配置DAQ，确保覆盖所有扫描点
+			max_t_uW = max(expCfg.scannedParam)
+			print(f"RabiSeq模式：使用最大微波脉冲持续时间 = {max_t_uW} ns")
+			result = DAQctl.configureDAQforRabi(expCfg.Nsamples, t_AOM, t_readoutDelay, t_wait, max_t_uW)
+			if result is None:
+				print("错误：DAQ配置失败，无法继续实验")
+				sys.exit(1)
+			DAQtask, software_delay = result
+		else:
+			# 其他序列使用传统的样本数配置
+			# 将t_duration转换为微秒单位
+			t_duration_us = expCfg.t_duration / 1e3
+			DAQtask = DAQctl.configureDAQ(expCfg.Nsamples, t_duration_us)
+			if DAQtask is None:
+				print("错误：DAQ配置失败，无法继续实验")
+				sys.exit(1)
 			
 		if expCfg.plotPulseSequence:
 			# 绘制序列
@@ -391,13 +553,24 @@ def runExperiment(expConfigFile):
 					instructionArray= PBctl.programPB(expCfg.sequence,seqArgList)
 				print('扫描点 ',i_scanPoint+1,' 共 ',expCfg.N_scanPts)
 				
+				# 添加软件延迟，确保采样点与PB脉冲窗口对齐
+				if software_delay > 0:
+					print(f"应用软件延迟: {software_delay:.6f} 秒")
+					time.sleep(software_delay)
+				
 				# 读取 DAQ
-				cts=DAQctl.readDAQ(DAQtask,2*expCfg.Nsamples,expCfg.DAQtimeout)
+				if expCfg.sequence == 'ESRseq':
+					# ESRseq使用基于时间和样本数的配置
+					cts=DAQctl.readDAQ(DAQtask,actualTotalSamples,expCfg.DAQtimeout)
+				else:
+					# 其他序列使用传统的样本数配置
+					cts=DAQctl.readDAQ(DAQtask,2*expCfg.Nsamples,expCfg.DAQtimeout)
 			
 				# 提取信号和背景计数
+				# 每个样本组包含2个样本（1个信号 + 1个背景）
 				sig = cts[0::2]
 				bkgnd = cts[1::2]
-						
+				
 				# 计算计数平均值
 				meanSignalCurrentRun[i_scanPoint] = np.mean(sig)
 				meanBackgroundCurrentRun[i_scanPoint] = np.mean(bkgnd)
@@ -415,32 +588,6 @@ def runExperiment(expConfigFile):
 						plt.pause(0.0001)
 				
 				# 根据 saveSpacing_inPulseLengthPts 的间隔和最终延迟点保存数据
-			if (i_scanPoint%expCfg.saveSpacing_inScanPts == 0) or (i_scanPoint==expCfg.N_scanPts-1):
-				data = np.zeros([i_scanPoint+1,3])
-				data[:,0] = expCfg.scannedParam[0:i_scanPoint+1]
-				data[:,1] = meanSignalCurrentRun[0:i_scanPoint+1]
-				data[:,2] = meanBackgroundCurrentRun[0:i_scanPoint+1]
-				dataFile = open(expCfg.dataFileName, 'w')
-				# 移除数据文件中的时间戳，时间戳已在文件名中
-				dataFile.write("# 频率 (Hz)\t信号计数\t背景计数\n")
-				for line in data:
-					dataFile.write("%.0f\t%.8f\t%.8f\n" % tuple(line))
-				paramFile = open(expCfg.paramFileName, 'w')
-				expParamList[1] = i_scanPoint+1
-				# 使用JSON格式保存参数
-				import json
-				# 将expParamList转换为字典
-				param_dict = {}
-				for i in range(0, len(expParamList), 2):
-					if i+1 < len(expParamList):
-						key = expParamList[i].rstrip(':')
-						value = expParamList[i+1]
-						param_dict[key] = value
-				# 写入JSON文件（时间戳已在文件名中）
-				json.dump(param_dict, paramFile, indent=2)
-				dataFile.close()
-				paramFile.close()
-					
 			# 按延迟递增顺序对当前运行的计数进行排序
 			dataCurrentRun = np.transpose(np.array([expCfg.scannedParam,meanSignalCurrentRun,meanBackgroundCurrentRun,contrastCurrentRun]))
 			sortingIndices = np.argsort(dataCurrentRun[:,0])
@@ -465,17 +612,8 @@ def runExperiment(expConfigFile):
 			plt.draw()
 			plt.pause(0.001)
 			
-			# 根据 saveSpacing_inAverages 的间隔和最终扫描后保存数据
+			# 根据 saveSpacing_inAverages 的间隔和最终扫描后保存参数文件
 			if (i_run%expCfg.saveSpacing_inAverages == 0) or (i_run==expCfg.Navg-1):
-				data = np.zeros([expCfg.N_scanPts,3])
-				data[:,0] = sortedScanParam
-				data[:,1] = updatedSignal
-				data[:,2] = updatedBackground
-				dataFile = open(expCfg.dataFileName, 'w')
-				# 移除数据文件中的时间戳，时间戳已在文件名中
-				dataFile.write("# 频率 (Hz)\t信号计数\t背景计数\n")
-				for item in data:
-					dataFile.write("%.0f\t%.8f\t%.8f\n" % tuple(item))
 				paramFile = open(expCfg.paramFileName, 'w')
 				expParamList[3] = i_run+1
 				# 使用JSON格式保存参数
@@ -490,13 +628,22 @@ def runExperiment(expConfigFile):
 				# 写入JSON文件（时间戳已在文件名中）
 				json.dump(param_dict, paramFile, indent=2)
 				paramFile.close()
-				dataFile.close()
-				print(f"✅ 最终结果已保存到: {expCfg.dataFileName}")
+				print(f"✅ 参数已保存到: {expCfg.paramFileName}")
 		
 		# 关闭 B210 输出（如果可用）
 		if B210_available:
 			SRSctl.disableSRS_RFOutput(B210)
 
+		# 从paramFileName中提取dateTimeStr
+		# paramFileName格式: savePath + saveFileName + dateTimeStr + '_PARAMS.txt'
+		# 需要提取中间的时间戳部分
+		paramFileName = expCfg.paramFileName
+		baseName = expCfg.savePath + expCfg.saveFileName
+		dateTimeStr = paramFileName.replace(baseName, '').replace('_PARAMS.txt', '')
+		
+		# 保存差分数据和图片（使用与参数文件相同的时间戳）
+		save_differential_data_and_plot(expCfg, sortedScanParam, updatedSignal, updatedBackground, updatedContrast, dateTimeStr)
+		
 		# 关闭 DAQ 任务：
 		DAQctl.closeDAQTask(DAQtask)
 		DAQclosed=True

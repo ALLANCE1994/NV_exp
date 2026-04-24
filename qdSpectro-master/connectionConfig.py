@@ -56,6 +56,7 @@ PB_MW = 5
 DAQ_APDInput = "myDAQ1/ai0"
 DAQ_SampleClk = "PFI0"       #PB_DAQ (通道 3)	DIO 0	采样时钟
 DAQ_StartTrig = "PFI1"       #PB_STARTtrig (通道 2)	DIO 1	触发脉冲
+DAQ_DOOutput = "myDAQ1/port0/line0"  # 数字输出通道，用于生成同步触发信号
 
 # 请在下面输入您的 National Instruments DAQ 的最大采样率（单位为样本/通道/秒）：
 DAQ_MaxSamplingRate = 200000

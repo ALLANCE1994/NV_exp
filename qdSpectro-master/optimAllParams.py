@@ -74,11 +74,12 @@ def save_optimization_data(x_data, y_data, x_label, y_label, filename_prefix):
     return dataFileName
 
 
-def read_fluorescence(Nsamples=200):
+def read_fluorescence(Nsamples=200, t_duration_us=1000):
     """读取荧光信号，每次读取都创建和关闭DAQ任务"""
     DAQtask = None
+    DOtask = None
     try:
-        DAQtask = DAQctl.configureDAQ(Nsamples)
+        DAQtask, DOtask = DAQctl.configureDAQ(Nsamples, t_duration_us)
         sig = DAQctl.readDAQ(DAQtask, 2*Nsamples, DAQtimeout)
         return np.mean(sig), np.std(sig)
     except Exception as e:
@@ -88,6 +89,11 @@ def read_fluorescence(Nsamples=200):
         if DAQtask is not None:
             try:
                 DAQctl.closeDAQTask(DAQtask)
+            except:
+                pass
+        if DOtask is not None:
+            try:
+                DAQctl.closeDAQTask(DOtask)
             except:
                 pass
 

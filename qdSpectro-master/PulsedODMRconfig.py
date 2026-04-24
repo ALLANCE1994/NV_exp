@@ -145,15 +145,18 @@ plotPulseSequence = True
 plotXaxisUnits = MHz
 # 绘制x轴标签:
 xAxisLabel = 'Frequency (MHz)'
-
+# 差分数据保存选项 - 设为 True 保存差分数据:
+saveDifferentialData = True
+# 图片保存选项 - 设为 True 保存实验图片:
+savePlots = True
 # 保存选项:------------------------------------------------------------------
 # 首次扫描时数据保存的频率点间隔:
 saveSpacing_inScanPts = 2
 # 平均运行中数据保存的间隔:
 saveSpacing_inAverages = 1
 # 数据保存文件夹路径:
-savePath = os.getcwd() + "\\Saved_Data\\"
-# 数据文件名:
+savePath = os.getcwd()+"\\Saved_Data\\"
+# 数据文件名称:
 saveFileName = "PulsedODMR_"
 
 # 平均选项:------------------------------------------------------------

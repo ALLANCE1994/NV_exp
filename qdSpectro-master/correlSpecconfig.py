@@ -129,6 +129,10 @@ plotPulseSequence = True
 plotXaxisUnits = ns
 # 绘图 x 轴标签
 xAxisLabel = 'delay (ns)'
+# 差分数据保存选项 - 设为 True 保存差分数据:
+saveDifferentialData = True
+# 图片保存选项 - 设为 True 保存实验图片:
+savePlots = True
 # 保存选项------------------------------------------------------------------
 # 首次扫描所有延迟点时的数据保存间隔：
 saveSpacing_inScanPts = 100
@@ -136,8 +140,8 @@ saveSpacing_inScanPts = 100
 saveSpacing_inAverages = 3
 # 数据保存文件夹路径：
 savePath = os.getcwd()+"\\Saved_Data\\"
-# 数据文件文件名
-saveFileName = "correlationSpec_"
+# 数据文件名称
+saveFileName = "correlSpec_"
 # 平均选项:------------------------------------------------------------
 # 逐次采样对比度归一化选项：
 shotByShotNormalization = False

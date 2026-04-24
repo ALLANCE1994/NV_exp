@@ -81,9 +81,9 @@ t_min = 1e3/PBclk #in ns
 
 # 微波 扫描 参数s:----------------------------------------------------
 # 启动 pulse 持续时间 (单位为纳秒):
-startPulseDuration = 0
+startPulseDuration = 20
 # End pulse 持续时间 (单位为纳秒):
-endPulseDuration = 1000
+endPulseDuration = 220
 # 数量 pulse length steps:
 N_scanPts = 101
 # 来自SRS的微波功率输出（dBm）- 请勿超过放大器的最大输入功率:
@@ -91,21 +91,21 @@ microwavePower = 5
 # B210 设备的增益设置（dB）- 范围通常为 0-70 dB，过高的增益可能导致信号失真
 # 注意：B210 使用增益（dB）而不是功率（dBm）
 # 建议增益值：50-65 dB
-B210_gain = 65
+B210_gain = 70
 # 微波 频率 (Hz):
 # [优化] 设为ESR测得的共振频率 2.8670 GHz
-microwaveFrequency = 2.8660e9 
+microwaveFrequency = 2.8652e9 
 # Pulse 序列 参数s:----------------------------------------------------
 # AOM pulse 持续时间 (ns)
-t_AOM = 10*us
+t_AOM = 115*us
 # 读取out 延迟 (ns)
-t_readoutDelay = 400*ns
+t_readoutDelay = 50*ns
 # 等待稳定时间 (ns) - ISC弛豫时间
 # [优化] 通常3-5µs，确保电子完全弛豫到基态
-t_wait = 5*us
+t_wait = 1.0*us
 # 各脉冲长度点需采集的荧光测量样本数量：
 # [优化] 增加样本数提高信噪比
-Nsamples = 100
+Nsamples = 5000
 # 平均运行轮次：
 Navg = 1
 #DAQ 超时, 单位为秒:
@@ -121,6 +121,10 @@ plotPulseSequence = True
 plotXaxisUnits = ns
 # 绘制X轴标签
 xAxisLabel = 'Microwave pulse length (ns)'
+# 差分数据保存选项 - 设为 True 保存差分数据:
+saveDifferentialData = True
+# 图片保存选项 - 设为 True 保存实验图片:
+savePlots = True
 # 保存 options------------------------------------------------------------------
 # 首次扫描期间，以扫描点数为间隔的数据保存周期：
 saveSpacing_inScanPts = 2

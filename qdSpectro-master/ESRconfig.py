@@ -95,21 +95,23 @@ B210_gain = 70
 # 注意：t_duration值需要根据具体实验条件（如NV色心荧光强度、DAQ采样率等）进行优化
 # 过长的t_duration会增加实验时间，过短则可能导致信号信噪比不足；
 # 对于 ESR 实验，典型值为 50-200 微秒
-# 具体值需要根据 NV 色心的荧光强度和实验要求进行调整
-t_duration = 10*us
+# 具体值需要根据 NV 色强度和实验要求强度和实验要求进行调整
+t_duration = 20*us
 # 每个频率点采集的荧光测量样本数:
-Nsamples = 5000
+Nsamples = 1
 # 平均运行次数:
 Navg = 1
 #DAQ 超时，单位为秒:
 DAQtimeout = 10
-# 对比度模式
+# 对比度模式 - 可选值：'ratio_SignalOverReference'、'ratio_DifferenceOverSum'或'signalOnly'
 contrastMode ='signalOnly'
+# contrastMode ='ratio_SignalOverReference'
+# contrastMode ='ratio_DifferenceOverSum'
 # 绘图选项--------------------------------------------------------------
 # 实时绘图更新选项
 livePlotUpdate = True
 # 绘制脉冲序列选项 - 设置为 true 可绘制脉冲序列
-plotPulseSequence = False
+plotPulseSequence = True
 # 绘制 x 轴单位 (Hz, kHz, MHz 或 GHz)
 plotXaxisUnits = MHz
 # 绘制 x 轴标签
@@ -123,9 +125,13 @@ saveSpacing_inAverages = 1
 savePath = os.getcwd()+"\\Saved_Data\\"
 # 数据文件名称
 saveFileName = "ESR_"
+# 差分数据保存选项 - 设为 True 保存差分数据:
+saveDifferentialData = True
+# 图片保存选项 - 设为 True 保存实验图片:
+savePlots = True
 # 平均选项:------------------------------------------------------------
 # 逐次采样对比度归一化选项:
-shotByShotNormalization = True
+shotByShotNormalization = False
 # 随机化扫描点顺序的选项
 randomize = False
 #------------------------- 用户输入结束 ----------------------------------#
