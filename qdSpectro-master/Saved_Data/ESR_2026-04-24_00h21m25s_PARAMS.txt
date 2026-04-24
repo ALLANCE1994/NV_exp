@@ -1,0 +1,16 @@
+{
+  "N_scanPts": 121,
+  "Navg": 1,
+  "Nsamples": 1000,
+  "startFreq": 2840000000.0,
+  "endFreq": 2900000000.0,
+  "microwavePower": 30,
+  "B210_gain": 70,
+  "t_duration": 100000.0,
+  "shotByShotNormalization": false,
+  "randomize": false,
+  "plotPulseSequence": true,
+  "saveSpacing_inScanPts": 2,
+  "saveSpacing_inAverages": 1,
+  "dataFileName": "e:\\\u8f6c\u79fb\\\u624b\u628a\u624b\u6559\u4f60\u505aNV\u8272\u5fc3\u5b9e\u9a8c\\qdSpectro-master\\Saved_Data\\ESR_2026-04-24_00h21m25s.txt"
+}
