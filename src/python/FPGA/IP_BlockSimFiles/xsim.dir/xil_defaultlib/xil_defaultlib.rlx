@@ -1,0 +1,7 @@
+0.7
+2020.2
+Jun 10 2021
+20:04:57
+C:/NIFPGA/iptemp/ipin8782581B80D744529064D1F490B1C86D/Vivado/DAQ_Controller.vhd,1777891253,vhdl,C:/NIFPGA/iptemp/ipin8782581B80D744529064D1F490B1C86D/Vivado/NV_DAQ_System.vhd,,,daq_controller,,secureip;unimacro;unisim;xil_defaultlib;xilinxcorelib,,,,,,
+C:/NIFPGA/iptemp/ipin8782581B80D744529064D1F490B1C86D/Vivado/DAQ_FIFO.vhd,1777891590,vhdl,C:/NIFPGA/iptemp/ipin8782581B80D744529064D1F490B1C86D/Vivado/NV_DAQ_System.vhd,,,daq_fifo,,secureip;unimacro;unisim;xil_defaultlib;xilinxcorelib,,,,,,
+C:/NIFPGA/iptemp/ipin8782581B80D744529064D1F490B1C86D/Vivado/NV_DAQ_System.vhd,1777893324,vhdl,,,,conf698ed297b65d4ab5944793abcda8965e;nv_daq_system,,secureip;unimacro;unisim;xil_defaultlib;xilinxcorelib,,,,,,
