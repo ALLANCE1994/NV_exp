@@ -25,27 +25,22 @@
 # 导入模块
 import os
 import sys
-# 确保工作目录是脚本所在目录
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 print(f"当前工作目录: {os.getcwd()}")
-print(f"Python路径: {sys.path}")
 
 import connectionConfig as conCfg
 import sequenceControl as seqCtl
 import SRScontrol as SRSctl
-# 使用针对MyDAQ优化的DAQ控制模块
 import DAQcontrol_MyDAQ as DAQctl
 import PBcontrol as PBctl
 import matplotlib.pyplot as plt
-# 设置中文字体，解决字体警告问题
-plt.rcParams['font.sans-serif'] = ['SimHei']  # 使用黑体字体
-plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
+plt.rcParams['font.sans-serif'] = ['SimHei']
+plt.rcParams['axes.unicode_minus'] = False
 import numpy as np
-from spinapi import ms,us,ns
+from spinapi import ms, us, ns
 from random import shuffle
-from os.path import isdir 
+from os.path import isdir
 from os import makedirs
-import math
 from importlib import import_module
 from time import localtime, strftime
 
@@ -273,6 +268,16 @@ def calculateContrast(contrastMode,signal,background):
 		print('错误：无法识别的对比度模式。有效的对比度模式为：\'ratio_SignalOverReference\'、\'ratio_DifferenceOverSum\' 或 \'signalOnly\'。请编辑配置脚本中的 contrastMode 变量以匹配有效的对比度模式。')
 		sys.exit()
 	return contrast
+
+def calculateNormalizedContrast(contrast):
+# 计算归一化对比度：先对数据乘以-1，然后将最大值归一化为1，其他点对比度为 x/最大值
+	contrast_neg = -contrast  # 先对数据乘以-1
+	max_val = np.max(contrast_neg)  # 找到最大值
+	if max_val != 0:
+		normalized_contrast = contrast_neg / max_val  # 最大值对应1，其他点为 x/最大值
+	else:
+		normalized_contrast = contrast_neg  # 避免除零
+	return normalized_contrast
 	
 def runExperiment(expConfigFile):
 	# 此函数运行实验，使用用户在实验配置文件（如 ESRconfig、Rabiconfig 等）中配置的输入参数，并绘制和保存数据。
@@ -346,10 +351,78 @@ def runExperiment(expConfigFile):
 			
 		# 配置 DAQ
 		DAQclosed = False
-		DAQtask = DAQctl.configureDAQ(expCfg.Nsamples)
+		
+		# myDAQ配置说明：
+		# - myDAQ不支持外部触发和外部时钟
+		# - 脉冲序列和DAQ采样是异步的
+		# - 通过长时间采集和平均来获取信号和背景的统计差异
+		from connectionConfig import DAQ_MaxSamplingRate
+		
+		# 定义常量
+		MAX_DAQ_SAMPLES = 8589934590  # DAQmx的最大样本数限制（约8.5亿）
+		CONTINUOUS_MODE_THRESHOLD = 1000000  # 超过此值使用连续采样模式（100万）
+		CONTINUOUS_BUFFER_SIZE = 50000  # 连续采样模式的缓冲区大小
+		
+		if hasattr(expCfg, 't_duration') and expCfg.t_duration > 0:
+			# t_duration的单位是纳秒（例如 50*us = 50*1000 = 50000 ns），需要转换为秒
+			t_duration_seconds = expCfg.t_duration / 1e9  # 纳秒 -> 秒
+			sequence_duration_seconds = 2 * t_duration_seconds  # 信号+背景两个半周期
+			
+			# 每个频率点采集的数据量 = 采样率 * 序列持续时间 * Nsamples
+			# 由于是异步采样，需要采集多个周期的数据来确保覆盖完整的信号和背景
+			required_Nsamples = int(sequence_duration_seconds * DAQ_MaxSamplingRate * expCfg.Nsamples)
+			
+			# 使用计算值
+			actual_Nsamples = required_Nsamples
+			
+			# 判断是否需要使用连续采样模式
+			use_continuous_mode = actual_Nsamples > CONTINUOUS_MODE_THRESHOLD
+			
+			# 如果使用有限采样模式，需要限制样本数不超过DAQ限制
+			if not use_continuous_mode:
+				actual_Nsamples = min(actual_Nsamples, MAX_DAQ_SAMPLES)
+			
+			# 计算实际采集时间（秒）
+			actual_acquisition_time = actual_Nsamples / DAQ_MaxSamplingRate
+			# 设置DAQtimeout为采集时间的2倍，确保有足够的缓冲
+			actual_DAQtimeout = max(actual_acquisition_time * 2, expCfg.DAQtimeout)
+			
+			print(f"📊 根据 t_duration={expCfg.t_duration/1e6:.2f}ms 计算样本数:")
+			print(f"   t_duration (ns): {expCfg.t_duration}")
+			print(f"   t_duration (s): {t_duration_seconds:.6f}")
+			print(f"   序列持续时间: {sequence_duration_seconds:.6f}s")
+			print(f"   每频率点采样次数: {expCfg.Nsamples}")
+			print(f"   计算所需样本数: {required_Nsamples}")
+			print(f"   使用样本数: {actual_Nsamples}")
+			print(f"   实际采集时间: {actual_acquisition_time:.4f}s")
+			print(f"   DAQ超时时间: {actual_DAQtimeout:.1f}s")
+			print(f"   采样模式: {'连续采样模式' if use_continuous_mode else '有限采样模式'}")
+			
+			# 警告：如果使用有限采样模式但所需样本数超过DAQ限制
+			if not use_continuous_mode and required_Nsamples > MAX_DAQ_SAMPLES:
+				print(f"⚠️ 警告：所需样本数 {required_Nsamples} 超过DAQ最大限制 {MAX_DAQ_SAMPLES}")
+				print(f"⚠️ 实际采集时间 {actual_acquisition_time:.2f}s 小于预期采集时间")
+		else:
+			actual_Nsamples = expCfg.Nsamples
+			actual_DAQtimeout = expCfg.DAQtimeout
+			use_continuous_mode = actual_Nsamples > CONTINUOUS_MODE_THRESHOLD
+			if not use_continuous_mode:
+				actual_Nsamples = min(actual_Nsamples, MAX_DAQ_SAMPLES)
+		
+		# 根据模式配置DAQ
+		if use_continuous_mode:
+			DAQtask = DAQctl.configureDAQContinuous(CONTINUOUS_BUFFER_SIZE)
+		else:
+			DAQtask = DAQctl.configureDAQ(actual_Nsamples)
+		
 		if DAQtask is None:
 			print("错误：DAQ配置失败，无法继续实验")
 			sys.exit(1)
+		
+		# 启动PulseBlaster让它连续运行脉冲序列
+		# 由于myDAQ没有外触发，脉冲序列和DAQ采样是异步的
+		print("🔄 启动PulseBlaster连续运行脉冲序列...")
+		instructionArray = PBctl.programPB(expCfg.sequence, sequenceArgs)
 			
 		if expCfg.plotPulseSequence:
 			# 绘制序列
@@ -386,17 +459,24 @@ def runExperiment(expConfigFile):
 				if expCfg.sequence == 'ESRseq' or expCfg.sequence == 'PulsedODMRseq':
 					if B210_available:
 						SRSctl.setSRS_Freq(B210, expCfg.scannedParam[i_scanPoint])
+					# PulseBlaster已经在连续运行，不需要重新编程
 				else:
 					seqArgList[0] = expCfg.scannedParam[i_scanPoint]
 					instructionArray= PBctl.programPB(expCfg.sequence,seqArgList)
 				print('扫描点 ',i_scanPoint+1,' 共 ',expCfg.N_scanPts)
 				
 				# 读取 DAQ
-				cts=DAQctl.readDAQ(DAQtask,2*expCfg.Nsamples,expCfg.DAQtimeout)
+				if use_continuous_mode:
+					# 连续采样模式：采集大量数据然后平均
+					cts = DAQctl.readDAQContinuous(DAQtask, actual_Nsamples, CONTINUOUS_BUFFER_SIZE, actual_DAQtimeout, expCfg.Nsamples * 2)
+				else:
+					cts = DAQctl.readDAQ(DAQtask, 2*actual_Nsamples, actual_DAQtimeout)
 			
-				# 提取信号和背景计数
-				sig = cts[0::2]
-				bkgnd = cts[1::2]
+				# 由于是异步采样，将数据分成两半：前半部分作为信号，后半部分作为背景
+				# 脉冲序列在连续运行，信号和背景交替出现，长时间平均后可以得到统计差异
+				half_length = len(cts) // 2
+				sig = cts[:half_length]
+				bkgnd = cts[half_length:]
 						
 				# 计算计数平均值
 				meanSignalCurrentRun[i_scanPoint] = np.mean(sig)
@@ -408,8 +488,10 @@ def runExperiment(expConfigFile):
 				if i_run==0:
 					if expCfg.livePlotUpdate:
 						xValues=expCfg.scannedParam[0:i_scanPoint+1]
-						plt.plot([x/expCfg.plotXaxisUnits for x in xValues],contrastCurrentRun[0:i_scanPoint+1], 'b-')
-						plt.ylabel('对比度')
+						# 计算归一化对比度：先乘以-1，然后最大值归一化为1
+						normalizedContrastCurrentRun = calculateNormalizedContrast(contrastCurrentRun[0:i_scanPoint+1])
+						plt.plot([x/expCfg.plotXaxisUnits for x in xValues],normalizedContrastCurrentRun, 'b-')
+						plt.ylabel('归一化对比度')
 						plt.xlabel(expCfg.xAxisLabel)
 						plt.draw()
 						plt.pause(0.0001)
@@ -421,25 +503,10 @@ def runExperiment(expConfigFile):
 				data[:,1] = meanSignalCurrentRun[0:i_scanPoint+1]
 				data[:,2] = meanBackgroundCurrentRun[0:i_scanPoint+1]
 				dataFile = open(expCfg.dataFileName, 'w')
-				# 移除数据文件中的时间戳，时间戳已在文件名中
 				dataFile.write("# 频率 (Hz)\t信号计数\t背景计数\n")
 				for line in data:
 					dataFile.write("%.0f\t%.8f\t%.8f\n" % tuple(line))
-				paramFile = open(expCfg.paramFileName, 'w')
-				expParamList[1] = i_scanPoint+1
-				# 使用JSON格式保存参数
-				import json
-				# 将expParamList转换为字典
-				param_dict = {}
-				for i in range(0, len(expParamList), 2):
-					if i+1 < len(expParamList):
-						key = expParamList[i].rstrip(':')
-						value = expParamList[i+1]
-						param_dict[key] = value
-				# 写入JSON文件（时间戳已在文件名中）
-				json.dump(param_dict, paramFile, indent=2)
 				dataFile.close()
-				paramFile.close()
 					
 			# 按延迟递增顺序对当前运行的计数进行排序
 			dataCurrentRun = np.transpose(np.array([expCfg.scannedParam,meanSignalCurrentRun,meanBackgroundCurrentRun,contrastCurrentRun]))
@@ -455,12 +522,14 @@ def runExperiment(expConfigFile):
 			updatedSignal = np.mean(signal[:,0:i_run+1],1)
 			updatedBackground = np.mean(background[:,0:i_run+1],1)
 			updatedContrast = np.mean(contrast[:,0:i_run+1],1)
+						# 计算归一化对比度：先乘以-1，然后最大值归一化为1
+			normalizedContrast = calculateNormalizedContrast(updatedContrast)
 			
 			# 更新绘图：
 			if expCfg.livePlotUpdate: 
 				plt.clf()
-			plt.plot([x/expCfg.plotXaxisUnits for x in sortedScanParam] ,updatedContrast,'b-')
-			plt.ylabel('对比度')
+			plt.plot([x/expCfg.plotXaxisUnits for x in sortedScanParam] ,normalizedContrast,'b-')
+			plt.ylabel('归一化对比度')
 			plt.xlabel(expCfg.xAxisLabel)
 			plt.draw()
 			plt.pause(0.001)
@@ -472,26 +541,16 @@ def runExperiment(expConfigFile):
 				data[:,1] = updatedSignal
 				data[:,2] = updatedBackground
 				dataFile = open(expCfg.dataFileName, 'w')
-				# 移除数据文件中的时间戳，时间戳已在文件名中
 				dataFile.write("# 频率 (Hz)\t信号计数\t背景计数\n")
 				for item in data:
 					dataFile.write("%.0f\t%.8f\t%.8f\n" % tuple(item))
-				paramFile = open(expCfg.paramFileName, 'w')
-				expParamList[3] = i_run+1
-				# 使用JSON格式保存参数
-				import json
-				# 将expParamList转换为字典
-				param_dict = {}
-				for i in range(0, len(expParamList), 2):
-					if i+1 < len(expParamList):
-						key = expParamList[i].rstrip(':')
-						value = expParamList[i+1]
-						param_dict[key] = value
-				# 写入JSON文件（时间戳已在文件名中）
-				json.dump(param_dict, paramFile, indent=2)
-				paramFile.close()
 				dataFile.close()
-				print(f"✅ 最终结果已保存到: {expCfg.dataFileName}")
+				
+				# 同步保存图片到数据文件夹中
+				imageFileName = os.path.splitext(expCfg.dataFileName)[0] + '.png'
+				plt.savefig(imageFileName, dpi=100, bbox_inches='tight')
+				print(f"✅ 图片已保存到: {imageFileName}")
+				print(f"✅ 数据已保存到: {expCfg.dataFileName}")
 		
 		# 关闭 B210 输出（如果可用）
 		if B210_available:

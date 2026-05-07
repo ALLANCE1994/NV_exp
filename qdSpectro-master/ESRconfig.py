@@ -62,6 +62,7 @@
 *randomize：设为True可对首次扫描之后所有扫描的频率点顺序进行随机打乱。
 """
 # 导入模块
+from sys import float_repr_style
 from spinapi import ns,us,ms
 from SRScontrol import Hz, kHz, MHz, GHz
 import os
@@ -75,11 +76,11 @@ t_min = 1e3/PBclk #单位为 ns
 
 # 微波扫描参数:----------------------------------------------------
 # 起始频率 (单位为Hz):
-startFreq = 2.84e9
+startFreq = 2.70e9
 # 结束频率 (单位为Hz):
-endFreq = 2.90e9
+endFreq = 3.04e9
 # 频率步进数:
-N_scanPts = 121
+N_scanPts = 341
 # SRS 输出的微波功率 (dBm) - 不要超过您放大器的最大输入功率:
 # 注意：此参数仅适用于 SRS 信号发生器
 microwavePower = 30
@@ -96,9 +97,9 @@ B210_gain = 70
 # 过长的t_duration会增加实验时间，过短则可能导致信号信噪比不足；
 # 对于 ESR 实验，典型值为 50-200 微秒
 # 具体值需要根据 NV 色心的荧光强度和实验要求进行调整
-t_duration = 10*us
+t_duration = 100*us
 # 每个频率点采集的荧光测量样本数:
-Nsamples = 5000
+Nsamples = 1000
 # 平均运行次数:
 Navg = 1
 #DAQ 超时，单位为秒:
